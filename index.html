@@ -31,9 +31,10 @@
 				function renderY(Y_content, y) {
 					x_html = x_html+Y_content;
 				}
-				let x_html = "";
+				let x_html = "<div>";
 				tile[x].forEach(renderY);
-				html = html+x_html+"<br>";
+        x_html = x_html+"</div>";
+				html = html+x_html;
 			}
 
 			let html = "";
