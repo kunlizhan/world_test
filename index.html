@@ -5,12 +5,12 @@
   <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    
+
 	<div class="tile">
 	<br> ....
 	<br> tete
 	</div>
-	
+
 	<script src="sjcl.js"></script> <!-- crypto library -->
 	<script>
 		var seed = 0;
@@ -36,21 +36,21 @@
         x_html = x_html+"</div>";
 				html = html+x_html;
 			}
-			
+
 			let html = "";
 			tile.forEach(renderX);
 			$( ".tile" ).html(html);
 		}
-		
+
 		function genTile(seed) {
 			let out = sjcl.hash.sha256.hash(seed); //hashes seed into bitArray
 			let hash = sjcl.codec.hex.fromBits(out); //convert bitArray to hexadecimal
 			console.log( hash );
-			
+
 			let tree_count = hash.substring(0, 1);
 			tree_count = parseInt(tree_count, 16);
 			console.log( tree_count );
-			
+
 			function tree_place(count) {
 				//reset tile
 				newTile();
@@ -61,17 +61,13 @@
 					let y = hash.substring(64-4*i-4, 64-4*i-2); //out of above 4 hex digits, takes the first 2
 					y = parseInt(y, 16);
 					console.log( y );
-					
+
 					//place it
-<<<<<<< HEAD:index.html
 					tile[x][y] = "<img src='tree.png'>";
-=======
-					tile[x][y] = "_O";
->>>>>>> parent of d62b1ac... rename to index:base.html
 				}
 				renderTile();
 			}
-			
+
 			tree_place(tree_count);
 		}
 		$( document ).ready(function() {
@@ -81,7 +77,7 @@
 				genTile(seed);
 			});
 		});
-		
+
 	</script>
   </body>
 </html>
