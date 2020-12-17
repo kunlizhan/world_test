@@ -1,9 +1,9 @@
 .tile {
 	font-family: monospace, monospace;
 	font-size: 0.3em;
-	color: white;
-	background-color: white;
+	color: black;
+	background-color: black;
 }
 .tree {
-	color: red;
+	color: white;
 }
