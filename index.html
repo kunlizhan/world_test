@@ -5,7 +5,7 @@
   <link rel="stylesheet" href="style.css">
   </head>
   <body>
-	<div class="tile">
+	<div class="tile" id="worldview">
 	</div>
 
 	<script src="sjcl.js"></script> <!-- crypto library -->
@@ -13,8 +13,17 @@
 	<script>
   var config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    scale: {
+        mode: Phaser.Scale.RESIZE,
+        parent: 'worldview',
+        //autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: 400,
+        height: 600,
+        min: {
+            width: 400,
+            height: 300
+        }
+    },
     physics: {
         default: 'arcade',
         arcade: {
@@ -45,17 +54,25 @@
   {
     //platforms = this.physics.add.staticGroup();
     this.add.image(400, 300, 'sky');
+    graphics = this.add.graphics(0, 0);
+    graphics.lineStyle(5, 0xFF00FF, 1.0);
+    graphics.fillStyle(0xFFFFFF, 1.0);
+    graphics.fillRect(50, 50, 400, 200);
+    graphics.strokeRect(50, 50, 400, 200);
+
     let platforms = this.physics.add.staticGroup();
     platforms.create(400, 600, 'ground').setScale(10,1).refreshBody();
     platforms.create(600, 400, 'ground');
     platforms.create(50, 250, 'ground');
     platforms.create(750, 220, 'ground');
+    platforms.add(graphics);
 
     player = this.physics.add.sprite(100, 450, 'dude');
     player.setBounce(0.2);
     player.setCollideWorldBounds(true);
 
     this.physics.add.collider(player, platforms);
+    //this.physics.add.collider(player, graphics);
 
     this.anims.create({
         key: 'left',
@@ -77,6 +94,7 @@
         repeat: -1
     });
     cursors = this.input.keyboard.createCursorKeys();
+    //this.scale.on('resize', myResize, this);
   }
 
   function update ()
@@ -102,7 +120,14 @@
         player.setVelocityY(-500);
     }
   }
-
+  //$(window).resize(myResize);
+  function myResize(gameSize, baseSize, displaySize, resolution)
+  {
+      var width = gameSize.width;
+      var height = gameSize.height;
+      console.log("resized");
+      this.cameras.resize(width, height);
+  }
 
 		var seed = 0;
 		var tile = [];
