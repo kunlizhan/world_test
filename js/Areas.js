@@ -15,8 +15,8 @@ function newArea() {
 function genArea(seed) {
 	let out = sjcl.hash.sha256.hash(seed); //hashes seed into bitArray
 	let hash = sjcl.codec.hex.fromBits(out); //convert bitArray to 64 digit hexadecimal
-	console.log( seed );
-
+	console.log( "seed:"+seed );
+	console.log( "hash:"+hash );
 	let tree_count = hash.substring(0, 1);
 	tree_count = parseInt(tree_count, 16);
 	console.log( "trees:"+tree_count );
@@ -47,8 +47,16 @@ export default function makeAreaMap(seed, game, pos) {
   // Load a map from a 2D array of tile indices
   let a_data = genArea(seed);
   // When loading from an array, make sure to specify the tileWidth and tileHeight
-  let map = game.make.tilemap({ data: a_data, tileWidth: 8, tileHeight: 8 });
-  let tiles = map.addTilesetImage('tiles_set', 'tiles_png', 8, 8, 1, 2);
-  let layer = map.createLayer(0, tiles, pos[0], pos[1]);
+  let map = game.make.tilemap({ data: a_data, tileWidth: 8, tileHeight: 8 })
+	//more layers map.layers[1] = map.layers[0]
+  let tiles = map.addTilesetImage('tiles_set', 'tiles_png', 8, 8, 1, 2)
+  let layer = map.createLayer(0, tiles, pos[0], pos[1])
+	map.setCollision(1)
+	game.cldrs[seed] = game.physics.add.collider(game.player, layer)
+	//var test = game.physics.add.collider(game.player, layer)
+	//test.name = seed
+	//game.physics.world.removeCollider(test);
+	//console.log(game.physics.world.colliders.getActive())
+	//game.physics.world.removeCollider(game.physics.world.colliders.getActive()[0]);
   return map;
 }
