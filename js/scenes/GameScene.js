@@ -6,7 +6,7 @@ var areas = [
   [0,0,0]
 ]
 const map_px = 128*8
-function vec_to_string(vec) { return vec.x.toString()+","+vec.y.toString() }
+function vec_to_str(vec) { return vec.x.toString()+","+vec.y.toString() }
 import makeAreaMap from '../Areas.js';
 export default class GameScene extends Phaser.Scene
 {
@@ -30,9 +30,7 @@ export default class GameScene extends Phaser.Scene
     this.player = this.createPlayer()
     this.player.setDepth(1)
     this.cursors = this.input.keyboard.createCursorKeys()
-    this.cldrs = {}
-    var group = this.physics.add.staticGroup();
-    this.physics.add.collider(this.player, group)
+    this.areas = areas
 
     camera = this.cameras.main
     camera.startFollow(this.player)
@@ -42,14 +40,8 @@ export default class GameScene extends Phaser.Scene
     this.area_current = this.physics.add.group(this.area_rect)
 
     this.earth_coord = new Phaser.Math.Vector2(0,0);
-    areas[1][1] = makeAreaMap(vec_to_string(this.earth_coord), this, [0,0])
-/*
-    console.log(areas[1][1].layers[0])
-    group.add(areas[1][1].layers[0])
-    console.log(group)*/
-
+    areas[1][1] = makeAreaMap(this.earth_coord, this, [0,0])
     this.updateAreas()
-    console.log(this.cldrs)
 	}
   SetInArea() {
     this.inArea = true
@@ -149,40 +141,42 @@ export default class GameScene extends Phaser.Scene
     }
     console.log("delta: "+ delta.x+","+delta.y )
     if (delta.x == -1) { //if new center is to be the 0th column, unshift to insert empty column while moving existing ones to the right
-      for (let i in areas[2]) {
-        let old = new Phaser.Math.Vector2(this.earth_coord)
-        old.x += 1
-        old.y += i-1
-        let seed = vec_to_string(old)
-        /*console.log(this.cldrs)
-        console.log(seed)
-        console.log(this.cldrs[seed])*/
-        this.cldrs[seed].destroy()
-        areas[2][i].destroy()
+      for (let area of areas[2]) {
+        area['cld'].destroy()
+        area['map'].destroy()
       }
       areas.pop()
       areas.unshift([0,0,0])
     } else if (delta.x == 1) {
-      for (let map of areas[0]) {map.destroy()}
+      for (let area of areas[0]) {
+        area['cld'].destroy()
+        area['map'].destroy()
+      }
       areas.shift()
       areas.push([0,0,0])
     }
     if (delta.y == -1) {
       for (let col of areas) {
-        if (col[2] != 0) {col[2].destroy()}
+        if (col[2] != 0) {
+          col[2]['cld'].destroy()
+          col[2]['map'].destroy()
+        }
         col.pop()
         col.unshift(0)
       }
     } else if (delta.y == 1) {
       for (let col of areas) {
-        if (col[0] != 0) {col[0].destroy()}
+        if (col[0] != 0) {
+          col[0]['cld'].destroy()
+          col[0]['map'].destroy()
+        }
         col.shift()
         col.push(0)
       }
     }
     //always runs
     this.earth_coord = this.earth_coord.add(delta)
-    let center = areas[1][1]
+    let center = areas[1][1]['map']
     let mx = center.tileToWorldXY(0, 0).x
     let my = center.tileToWorldXY(0, 0).y
     for (let col in areas) {
@@ -192,12 +186,13 @@ export default class GameScene extends Phaser.Scene
           let new1 = new Phaser.Math.Vector2(parseInt(col)-1,parseInt(row)-1)
           //console.log("new1: "+ new1.x+","+new1.y )
           var new_seed = old.add(new1)
-          areas[col][row] = makeAreaMap(vec_to_string(new_seed), this, [mx+(col-1)*map_px, my+(row-1)*map_px])
+          areas[col][row] = makeAreaMap(new_seed, this, [mx+(col-1)*map_px, my+(row-1)*map_px])
         }
       }
     }
     console.log("earth_coord: "+ this.earth_coord.x+","+this.earth_coord.y )
-
+    console.log("this.areas:")
+    console.log(this.areas)
     this.area_rect.setPosition(mx, my)
 
     /*

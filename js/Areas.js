@@ -1,4 +1,5 @@
 const area_size = 128
+function vec_to_str(vec) { return vec.x.toString()+","+vec.y.toString() }
 
 function newArea() {
 	let area = [];
@@ -15,8 +16,8 @@ function newArea() {
 function genArea(seed) {
 	let out = sjcl.hash.sha256.hash(seed); //hashes seed into bitArray
 	let hash = sjcl.codec.hex.fromBits(out); //convert bitArray to 64 digit hexadecimal
-	console.log( "seed:"+seed );
-	console.log( "hash:"+hash );
+	//console.log( "seed:"+seed );
+	//console.log( "hash:"+hash );
 	let tree_count = hash.substring(0, 1);
 	tree_count = parseInt(tree_count, 16);
 	console.log( "trees:"+tree_count );
@@ -45,18 +46,21 @@ function genArea(seed) {
 
 export default function makeAreaMap(seed, game, pos) {
   // Load a map from a 2D array of tile indices
-  let a_data = genArea(seed);
+  let a_data = genArea(vec_to_str(seed));
   // When loading from an array, make sure to specify the tileWidth and tileHeight
   let map = game.make.tilemap({ data: a_data, tileWidth: 8, tileHeight: 8 })
-	//more layers map.layers[1] = map.layers[0]
   let tiles = map.addTilesetImage('tiles_set', 'tiles_png', 8, 8, 1, 2)
   let layer = map.createLayer(0, tiles, pos[0], pos[1])
 	map.setCollision(1)
-	game.cldrs[seed] = game.physics.add.collider(game.player, layer)
+
+	let area = {}
+	area['map'] = map
+	area['cld'] = game.physics.add.collider(game.player, layer)
+	area['seed'] = seed
 	//var test = game.physics.add.collider(game.player, layer)
 	//test.name = seed
 	//game.physics.world.removeCollider(test);
 	//console.log(game.physics.world.colliders.getActive())
 	//game.physics.world.removeCollider(game.physics.world.colliders.getActive()[0]);
-  return map;
+  return area;
 }
