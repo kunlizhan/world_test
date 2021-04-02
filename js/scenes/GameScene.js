@@ -5,7 +5,7 @@ var areas = [
   [0,0,0],
   [0,0,0]
 ]
-const map_px = 128*8
+const map_px = 128*16 //tiles * tile px size
 function vec_to_str(vec) { return vec.x.toString()+","+vec.y.toString() }
 import makeAreaMap from '../Areas.js';
 export default class GameScene extends Phaser.Scene
