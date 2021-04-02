@@ -19,7 +19,7 @@ function newArea() {
 
 function genArea(seed) {
   let area = newArea();
-	let ps = new PseudoRand(seed, 16)
+	let ps = new PseudoRand(seed, 32)
 
 	for (let col=0; col < area_size; col++) {
 		for (let row=0; row < area_size; row++) {
@@ -27,30 +27,39 @@ function genArea(seed) {
 			let index = 0
 			switch (ps.nextN()) {
 				case 0:
+					index = 12
+					break
 				case 1:
+					index = 8
+					break
 				case 2:
+					index = 9
+					break
 				case 3:
+					index = 10
+					break
 				case 4:
+					index = 11
+					break
 				case 5:
 				case 6:
-					index = 0
+					index = 1
 					break
 				case 7:
 				case 8:
-					index = 1
+					index = 2
 					break
 				case 9:
 				case 10:
-				case 11:
-				case 12:
-				case 13:
-				case 14:
-					index = 2
-					break
-				case 15:
 					index = 3
 					break
+				case 11:
+				case 12:
+					index = 4
+					break
 				default:
+					index = 0
+					break
 					console.error("not in range")
 			}
 			area[col][row] = index
@@ -67,7 +76,7 @@ export default function makeAreaMap(seed, game, pos) {
   let map = game.make.tilemap({ data: a_data, tileWidth: tile_size, tileHeight: tile_size })
   let tiles = map.addTilesetImage('tiles_set', 'tiles_png', tile_size, tile_size, 1, 2)
   let layer = map.createLayer(0, tiles, pos[0], pos[1])
-	map.setCollision(3)
+	map.setCollisionBetween(12,15)
 
 	let area = {}
 	area['map'] = map
