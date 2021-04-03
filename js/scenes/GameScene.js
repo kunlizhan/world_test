@@ -7,6 +7,7 @@ var areas = [
 ]
 const map_px = 128*16 //tiles * tile px size
 function vec_to_str(vec) { return vec.x.toString()+","+vec.y.toString() }
+
 import makeAreaMap from '../Areas.js';
 export default class GameScene extends Phaser.Scene
 {
@@ -31,6 +32,8 @@ export default class GameScene extends Phaser.Scene
     this.player.setDepth(1)
     this.cursors = this.input.keyboard.createCursorKeys()
     this.areas = areas
+    console.log(this)
+    //this.physics.world.drawDebug = false
 
     camera = this.cameras.main
     camera.startFollow(this.player)
@@ -43,10 +46,6 @@ export default class GameScene extends Phaser.Scene
     areas[1][1] = makeAreaMap(this.earth_coord, this, [0,0])
     this.updateAreas()
 	}
-  SetInArea() {
-    this.inArea = true
-    console.log(this.inArea)
-  }
   update()
   {
     var cursors = this.cursors
@@ -91,12 +90,11 @@ export default class GameScene extends Phaser.Scene
         player.setVelocityY(0)
     }
 
-    this.inArea = false
   }
 
   createPlayer()
 	{
-		const player = this.physics.add.sprite(0, 0, DUDE_KEY)
+		const player = this.physics.add.sprite(700, 100, DUDE_KEY)
 
 		this.anims.create({
 			key: 'left',
@@ -122,7 +120,7 @@ export default class GameScene extends Phaser.Scene
 	}
 
   updateAreas() {
-    console.log(areas[1][1])
+    //console.log(areas[1][1])
     let player_center = this.player.getCenter()
     let delta = new Phaser.Math.Vector2(0,0);
       /*console.log("player center:")

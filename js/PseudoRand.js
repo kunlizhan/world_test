@@ -5,53 +5,53 @@ function pad(str, digits) {
 
 export default class PseudoRand
 {
-  constructor(seed, max_n)
-	{
-  	this.max_n = max_n
-  	this.n_bits = (this.max_n-1).toString(2).length
-
+  constructor(seed) {
+    this.seed = seed
+    this.m_len= 64
     this.m_base = 16
   	this.m_base_bits = (this.m_base-1).toString(2).length
+    this.set_bit_len(2)
 
-  	this.chars_per_n = Math.ceil(this.n_bits/this.m_base_bits)
-    this.seed = seed
-    this.m_iter = 0
-    let m = sjcl.hash.sha256.hash(this.seed) //makes new hash
-    this.m = sjcl.codec.hex.fromBits(m)
-    //console.log("this.m : ")
-    //console.log(this.m)
+    this.bits = ""
+    let str = sjcl.hash.sha256.hash(this.seed) //makes new str
+    str = sjcl.codec.hex.fromBits(str)
+    this.str = str
+    //console.log("this.str : "+this.str )
 	}
 
-  nextN() {
-    //console.log(this.m)
-    if (this.m.length < this.chars_per_n) { this.newM() }
-  	let taken = this.m.slice(-this.chars_per_n)
+  set_bit_len(b) {
+    this.n_bits = b
+  	this.chars_per_n = Math.ceil(this.n_bits/this.m_base_bits)
+    this.bits_per_chars = this.m_base_bits*this.chars_per_n
+  }
+
+  next_bits() {
+    if (this.bits.length < this.n_bits) { this.next_chars() }
+    let taken = this.bits.slice(-this.n_bits)
+    //console.log("this.bits: "+this.bits)
   	//console.log("taken: "+taken)
-  	this.m = this.m.slice(0, -this.chars_per_n)
+  	this.bits = this.bits.slice(0, -this.n_bits)
 
-  	let bits = parseInt(taken, this.m_base)
-  	bits = pad(bits.toString(2), this.m_base_bits)
-  	//console.log("bits: "+bits)
-  	let result = bits.slice(-this.n_bits)
-  	result = parseInt(result, 2)
-
-  	//console.log(result)
-  	return result
+  	let result = parseInt(taken, 2)
+    //console.log("result: "+result)
+    return result
   }
 
-  newM() {
-    this.m_iter++
-    let m = sjcl.hash.sha256.hash(this.seed)
-    let runs = 0
-    while (runs < this.m_iter) {
-      m = sjcl.hash.sha256.hash(m)
-      runs++
-    }
-    m = sjcl.codec.hex.fromBits(m)
-    /*console.log("grown hash")
-    console.log(m)
-    console.log(runs)*/
-    this.m = m
-    this.m_iter = runs
+  next_chars() {
+    if (this.str.length < this.m_len+this.chars_per_n) { this.next_str() }
+    //console.log("this.str : "+this.str )
+    let chars = this.str.slice(-this.chars_per_n)
+    chars = parseInt(chars, this.m_base)
+    chars = pad(chars.toString(2), this.bits_per_chars)
+    this.bits = chars+this.bits
+    this.str = this.str.slice(0, -this.chars_per_n)
   }
+
+  next_str() {
+    let new_seed = this.str.slice(0, this.m_len)
+    let next = sjcl.hash.sha256.hash(new_seed)
+    next = sjcl.codec.hex.fromBits(next)
+    this.str = next+this.str
+  }
+
 }
