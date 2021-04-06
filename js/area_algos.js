@@ -13,72 +13,82 @@ export function rand_walk_ortho({area_arr, pseudorand, tile_index}) {
   area_size = array.length
   use_tile = tile_index
 
-  let start_col = Math.floor((area_size-1)/2)
-  array[start_col].forEach(function(item, index){
-    array[start_col][index] = -1
-  })
-  c_x = start_col
-  c_y = 0
+  let target_x = area_size-1
+  let target_y = Math.floor((area_size-1)/2)
+  /*array.forEach(function(item, index){
+    array[index][target_y] = -1
+  })*/
+
+  c_x = 0
+  c_y = target_y
+  let total_steps_x = Math.abs(c_x - target_x)
+
   let max_drift = Math.floor((area_size-1)/4)
   // add turns
 
-  //console.log("drawing path: "+c_x+", "+c_y)
-  function turn(one) {
-    let diff = c_x-start_col
-    if (Math.abs(diff+one) <= max_drift) {
-      return one
-    } else {
-      console.log("correcting diff: "+diff)
+  //console.log("drawing path: "+c_y+", "+c_x)
+  function next_y(move_y) {
+    let diff = c_y-target_y
+    if (Math.abs(diff+move_y) > max_drift) {
+      //console.log("correcting diff: "+diff)
       if (diff > 0) {
-        return -1
+        move_y = -1
       } else if (diff < 0){
-        return 1
+        move_y = 1
       } else {
-        return 0
+        move_y = 0
       }
     }
+    switch (move_y) {
+      case -1:
+        c_y += -1
+        //set_c_tile_ind()
+        break
+      case 0:
+        break
+      case 1:
+        c_y += 1
+        //set_c_tile_ind()
+        break
+    }
   }
-  pseudorand.set_bit_len(2)
-  use_tile = -1
-  set_c_tile_ind()
-  use_tile = tile_index
-  for (let row=0; row < area_size-1; row++) {
 
-    if (row >= Math.floor((area_size-1)/2)) { //tighten drift at halfway
-      let remain_distance = (area_size-1)-c_y
-      max_drift = Math.floor(Math.abs(  ((area_size-1)/4)*((remain_distance-4)/(area_size/2))  ))
-      //array[c_x][c_y] = 8
-      //console.log("at "+c_x+", "+(c_y+1)+" the drift is "+max_drift)
-      if ((area_size-1)-c_y < 5) {
+  pseudorand.set_bit_len(2)
+  for (c_x; c_x <= target_x; c_x++) {
+    set_c_tile_ind()
+
+    let remain_distance = (target_x)-c_x
+    if (remain_distance < Math.floor(total_steps_x/2)) { //tighten drift at halfway
+      max_drift = Math.floor(Math.abs(  (total_steps_x/4)*((remain_distance-4)/(total_steps_x/2))  ))
+      //array[c_y][c_x] = 8
+      //console.log("at "+c_y+", "+(c_x+1)+" the drift is "+max_drift)
+      if (remain_distance < 5) {
         max_drift = 0
-        console.log("drift set to zero: "+(c_x-start_col))
-        use_tile = 8
+        //console.log("drift set to zero: "+(c_y-target_y))
+        //use_tile = 8
       }
       /*if (max_drift == 0) {
-        //console.error("got to zero at"+c_x+","+c_y)
-        array[c_x][c_y] = 12
+        //console.error("got to zero at"+c_y+","+c_x)
+        array[c_y][c_x] = 12
       }*/
     }
     switch (pseudorand.next_bits()) {
     //to do: add drift correction
     case 0:
     case 1:
-       //stay forward
+      next_y(0) //stay forward
       break
     case 2:
-      c_x += turn(1) //turns
-      set_c_tile_ind()
+      next_y(1) //turns -1 y
       break
     case 3:
-      c_x += turn(-1) //turn other way
-      set_c_tile_ind()
+      next_y(-1) //turns +1 y
       break
     }
-    c_y += 1 //move forward and draw again
-    set_c_tile_ind()
   }
-  array[start_col][area_size-1] = 12
-  console.error("done path")
+  //array[0][target_y+1] = 2
+  //array[target_x][target_y+1] = 2
+  //console.error("done path")
   return array
 }
 export function rand_walk_diag({area_arr, pseudorand, tile_index}) {
@@ -97,7 +107,7 @@ export function rand_walk_diag({area_arr, pseudorand, tile_index}) {
   console.log("target_y: "+target_y)
 
   pseudorand.set_bit_len(1)
-  use_tile = -1
+  //use_tile = -1
   set_c_tile_ind()
   use_tile = tile_index
   let ps_result = undefined
@@ -162,6 +172,7 @@ export function rand_walk_diag({area_arr, pseudorand, tile_index}) {
       break
     }
   }
-
+  //array[0][target_y+1] = 2
+  //array[target_x+1][target_y] = 2
   return array
 }

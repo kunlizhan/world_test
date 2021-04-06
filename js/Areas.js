@@ -104,13 +104,27 @@ export default class AreaL1 {
 
   	function make_path(ps) {
   		ps.set_bit_len(1)
-  		if (ps.next_bits() == 1) {
-  			let type = "straight"
-        area_arr = area_algos.rand_walk_ortho({area_arr:area_arr, pseudorand:ps, tile_index:2})
-
-  		}	else {
-  			let type = "bent"
-        area_arr = area_algos.rand_walk_diag({area_arr:area_arr, pseudorand:ps, tile_index:2})
+  		switch (ps.next_bits()) {
+  			case 0:
+	        area_arr = area_algos.rand_walk_ortho({area_arr:area_arr, pseudorand:ps, tile_index:2})
+					if (ps.next_bits() == 1) {
+						area_arr = cm.matrix_rot_R(area_arr)
+					}
+					break
+				case 1:
+	        area_arr = area_algos.rand_walk_diag({area_arr:area_arr, pseudorand:ps, tile_index:2})
+					ps.set_bit_len(2)
+		  		switch (ps.next_bits()) {
+						case 0:
+							area_arr = cm.matrix_rot_R(area_arr)
+						case 1:
+							area_arr = cm.matrix_rot_R(area_arr)
+						case 2:
+							area_arr = cm.matrix_rot_R(area_arr)
+						case 3:
+							break
+					}
+					break
   		}
       //console.log(area_arr)
       area_arr = cm.transpose(area_arr)

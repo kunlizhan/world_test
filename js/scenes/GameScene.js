@@ -1,4 +1,5 @@
 const DUDE_KEY = 'dude'
+const walk_speed = 400
 var camera = undefined
 var areas = [
   [0,0,0],
@@ -61,7 +62,7 @@ export default class GameScene extends Phaser.Scene
     var player = this.player
     if (cursors.left.isDown)
     {
-        player.setVelocityX(-200)
+        player.setVelocityX(-walk_speed)
         player.anims.play('left', true)
         if (!this.physics.world.overlap(player, this.area_current)) {
           this.updateAreas()
@@ -69,7 +70,7 @@ export default class GameScene extends Phaser.Scene
     }
     else if (cursors.right.isDown)
     {
-        player.setVelocityX(200)
+        player.setVelocityX(walk_speed)
         player.anims.play('right', true)
         if (!this.physics.world.overlap(player, this.area_current)) {
           this.updateAreas()
@@ -82,14 +83,14 @@ export default class GameScene extends Phaser.Scene
     }
     if (cursors.up.isDown)
     {
-        player.setVelocityY(-200)
+        player.setVelocityY(-walk_speed)
         if (!this.physics.world.overlap(player, this.area_current)) {
           this.updateAreas()
         }
     }
     else if (cursors.down.isDown)
     {
-        player.setVelocityY(200)
+        player.setVelocityY(walk_speed)
         if (!this.physics.world.overlap(player, this.area_current)) {
           this.updateAreas()
         }
