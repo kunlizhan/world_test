@@ -1,10 +1,10 @@
 import PseudoRand from './PseudoRand.js';
 import * as cm from './custom_maths.js';
 import * as area_algos from './area_algos.js';
+import * as t_type from './t_type.js';
 
 const area_size = 128
 const tile_size = 16
-const tile_types = 4
 
 class Area
 {

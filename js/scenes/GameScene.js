@@ -1,14 +1,16 @@
 const DUDE_KEY = 'dude'
 const walk_speed = 400
+const map_px = 128*16 //tiles * tile px size
 var camera = undefined
 var areas = [
   [0,0,0],
   [0,0,0],
   [0,0,0]
 ]
-const map_px = 128*16 //tiles * tile px size
+var area_L2 = []
 
-import AreaL1 from '../Areas.js';
+import AreaL1 from '../AreaL1.js';
+import AreaL2 from '../AreaL2.js';
 export default class GameScene extends Phaser.Scene
 {
   constructor()
@@ -24,6 +26,8 @@ export default class GameScene extends Phaser.Scene
     )
     this.load.image('tiles_png', 'assets/tiles.png')
     this.load.image('sky', 'assets/sky.png')
+    this.load.json('lvl3_arr', 'assets/maps/lvl3_arr.json')
+    this.load.json(`my_lvl3_81_108`, `assets/maps/my_lvl3_81_108.json`)
 	}
 
   create()
@@ -31,6 +35,7 @@ export default class GameScene extends Phaser.Scene
     this.player = this.createPlayer()
     this.player.setDepth(1)
     this.cursors = this.input.keyboard.createCursorKeys()
+		this.lvl3_arr = this.cache.json.get('lvl3_arr')
     this.areas = areas
     console.log(this)
     //this.physics.world.drawDebug = false
@@ -44,6 +49,7 @@ export default class GameScene extends Phaser.Scene
 
     this.lvl3_xy = new Phaser.Math.Vector2(81,108); // Tingi on the lvl 3 map
     this.lvl2_xy = new Phaser.Math.Vector2(0,0); // start location on lvl 2 map
+    this.area_L2 = new AreaL2({lvl3vec: this.lvl3_xy, scene: this})
 
     /*//test ps
     import PseudoRand from '../PseudoRand.js';
