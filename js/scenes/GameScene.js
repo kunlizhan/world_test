@@ -8,6 +8,7 @@ var areas = [
   [0,0,0]
 ]
 var area_L2 = []
+var worker = undefined
 
 import AreaL1 from '../AreaL1.js';
 import AreaL2 from '../AreaL2.js';
@@ -20,6 +21,7 @@ export default class GameScene extends Phaser.Scene
 
 	preload()
 	{
+    worker = this.game.config.worker
     this.load.spritesheet(DUDE_KEY,
         'assets/dude.png',
         { frameWidth: 32, frameHeight: 48 }
@@ -37,7 +39,7 @@ export default class GameScene extends Phaser.Scene
     this.cursors = this.input.keyboard.createCursorKeys()
 		this.lvl3_arr = this.cache.json.get('lvl3_arr')
     this.areas = areas
-    console.log(this)
+    //console.log(this)
     //this.physics.world.drawDebug = false
 
     camera = this.cameras.main
@@ -51,6 +53,7 @@ export default class GameScene extends Phaser.Scene
     this.lvl2_xy = new Phaser.Math.Vector2(0,0); // start location on lvl 2 map
     this.area_L2 = new AreaL2({lvl3vec: this.lvl3_xy, scene: this})
 
+
     /*//test ps
     import PseudoRand from '../PseudoRand.js';
     import {vec_to_str} from '../custom_maths.js';
@@ -60,6 +63,9 @@ export default class GameScene extends Phaser.Scene
     console.log("ps.str : "+ps.str )*/
 
     areas[1][1] = new AreaL1(this.lvl2_xy, this, [0,0])
+    //console.log(areas[1][1])
+        //worker.postMessage(["make_map", areas[1][1]]);
+        // worker.postMessage([])
     this.updateAreas()
 	}
   update()

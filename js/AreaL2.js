@@ -26,9 +26,9 @@ export default class AreaL2 {
   	let ps = new PseudoRand(name)
   	ps.set_bit_len(1)
 
-		let key = (area_size)*lvl3vec.y+lvl3vec.x // converts 2d to 1d key
+		let key = (area_size)*lvl3vec.y+lvl3vec.x // converts 2d key to 1d key
 		this.lvl3_tile = scene.lvl3_arr[key]-1
-		console.log("value of lvl3 "+cm.vec_to_str(lvl3vec)+": "+this.lvl3_tile)
+		//console.log("value of lvl3 "+cm.vec_to_str(lvl3vec)+": "+this.lvl3_tile)
 
 		if (this.lvl3_tile == 4) { //special tile with custom lvl2_arr
 			if (scene.cache.json.get(fullname) !== undefined) {
@@ -46,12 +46,13 @@ export default class AreaL2 {
   	this.layers = {}
 		this.layers.terr = "terrain"
 		this.layers.path = "paths"
-  	this.seed = lvl3vec
+  	this.lvl3vec = lvl3vec
 
     //
   }
 	mapLoaded() {
-		this.map = cm.unflatten({arr: this.scene.cache.json.get(this.fullname), row_len: area_size})
-		console.log(this.map)
+		let arr = this.scene.cache.json.get(this.fullname)
+		this.map = cm.unflatten({arr: arr, row_len: area_size})
+		//console.log(this.map)
 	}
 }

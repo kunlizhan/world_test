@@ -15,4 +15,17 @@ const config = {
 	},
 	scene: [GameScene]
 }
-export default new Phaser.Game(config)
+const myGame = new Phaser.Game(config)
+if (window.Worker) {
+	let worker = myGame.config.worker = new Worker("js/worker.js");
+
+	worker.postMessage(["first.value", "second.value"]);
+	console.log('Message posted to worker');
+
+	worker.onmessage = function(e) {
+		console.log(e.data);
+	}
+} else {
+	console.log('Your browser doesn\'t support web workers.')
+}
+export default myGame
