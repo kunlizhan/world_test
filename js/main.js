@@ -17,11 +17,7 @@ const config = {
 }
 const myGame = new Phaser.Game(config)
 if (window.Worker) {
-	let worker = myGame.config.worker = new Worker("js/worker.js");
-
-	worker.postMessage(["first.value", "second.value"]);
-	console.log('Message posted to worker');
-
+	let worker = myGame.config.worker = new PromiseWorker( new Worker("js/worker.js") )
 	worker.onmessage = function(e) {
 		console.log(e.data);
 	}

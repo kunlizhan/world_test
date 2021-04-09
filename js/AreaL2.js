@@ -53,6 +53,7 @@ export default class AreaL2 {
 	mapLoaded() {
 		let arr = this.scene.cache.json.get(this.fullname)
 		this.map = cm.unflatten({arr: arr, row_len: area_size})
+		delete this.scene
 		//console.log(this.map)
 	}
 }

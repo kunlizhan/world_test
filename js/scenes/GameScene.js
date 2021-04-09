@@ -7,8 +7,8 @@ var areas = [
   [0,0,0],
   [0,0,0]
 ]
-var area_L2 = []
 var worker = undefined
+var retry = undefined
 
 import AreaL1 from '../AreaL1.js';
 import AreaL2 from '../AreaL2.js';
@@ -17,6 +17,9 @@ export default class GameScene extends Phaser.Scene
   constructor()
 	{
 		super('game-scene')
+    this.lvl3_xy = new Phaser.Math.Vector2(81,108) // Tingi on the lvl 3 map
+    this.lvl2_xy = new Phaser.Math.Vector2(0,0) // start location on lvl 2 map
+    this.lvl1_xy = new Phaser.Math.Vector2(0,0) // start location on lvl 1 map
 	}
 
 	preload()
@@ -30,6 +33,7 @@ export default class GameScene extends Phaser.Scene
     this.load.image('sky', 'assets/sky.png')
     this.load.json('lvl3_arr', 'assets/maps/lvl3_arr.json')
     this.load.json(`my_lvl3_81_108`, `assets/maps/my_lvl3_81_108.json`)
+
 	}
 
   create()
@@ -49,25 +53,45 @@ export default class GameScene extends Phaser.Scene
     this.area_rect.setOrigin(0)// this shorthand moves origin from default center to top left
     this.area_current = this.physics.add.group(this.area_rect)
 
-    this.lvl3_xy = new Phaser.Math.Vector2(81,108); // Tingi on the lvl 3 map
-    this.lvl2_xy = new Phaser.Math.Vector2(0,0); // start location on lvl 2 map
-    this.area_L2 = new AreaL2({lvl3vec: this.lvl3_xy, scene: this})
-
-
-    /*//test ps
-    import PseudoRand from '../PseudoRand.js';
-    import {vec_to_str} from '../custom_maths.js';
-    let ps = new PseudoRand(vec_to_str(this.lvl2_xy))
-    console.log("ps.str : "+ps.str )
-    ps.next_bits()
-    console.log("ps.str : "+ps.str )*/
+    //this.area_L2 = new AreaL2({lvl3vec: this.lvl3_xy, scene: this})
 
     areas[1][1] = new AreaL1(this.lvl2_xy, this, [0,0])
-    //console.log(areas[1][1])
-        //worker.postMessage(["make_map", areas[1][1]]);
-        // worker.postMessage([])
-    this.updateAreas()
+    //this.updateAreas()
+
+    //start new worker async job for creating area
+    this.lvl1_areas = new Map()
+
+    retry = this.updateMaps.bind(this)
+    this.updateMaps()
+
+    worker.postMessage(
+      {job:"make_map2", arg: "some args"}
+    ).then(function (response) {
+      console.log('Got response2: ')
+      console.log(response)
+    }).catch(function (err) {
+      console.log('error response2: ')
+      console.log(err.message); // 'naughty!'
+    })
 	}
+
+  updateMaps() {
+
+    worker.postMessage(
+      {job:"make_map", arg: this.lvl2_xy}
+    ).then(
+      function (response) {
+        console.log('Got response: ')
+        console.log(response)
+      }
+    ).catch(
+      function (err) {
+        console.log(`error response: ${err.message}`)
+        retry()
+      }
+    )
+  }
+
   update()
   {
     var cursors = this.cursors
@@ -116,7 +140,7 @@ export default class GameScene extends Phaser.Scene
 
   createPlayer()
 	{
-		const player = this.physics.add.sprite(700, 100, DUDE_KEY)
+		const player = this.physics.add.sprite(this.lvl1_xy.x, this.lvl1_xy.y, DUDE_KEY)
 
 		this.anims.create({
 			key: 'left',
