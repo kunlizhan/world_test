@@ -87,7 +87,7 @@ export default class GameScene extends Phaser.Scene
     ).catch(
       function (err) {
         console.log(`error response: ${err.message}`)
-        retry()
+        //retry()
       }
     )
   }

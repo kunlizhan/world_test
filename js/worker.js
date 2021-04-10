@@ -45,9 +45,11 @@ function unflatten({arr, row_len, col_len=row_len}) {
 }
 //custom_maths end
 
+const Vec2 = Phaser.Math.Vector2 //shorthand
+
 const area_size = 128
-this.lvl3_xy = new Phaser.Math.Vector2(81,108) // Tingi on the lvl 3 map
-this.lvl2_xy = new Phaser.Math.Vector2(14,14) // start location on lvl 2 map
+this.lvl3_xy = new Vec2(81,108) // Tingi on the lvl 3 map
+this.lvl2_xy = new Vec2(14,14) // start location on lvl 2 map
 //const myScene = new Phaser.Scene(null)
 this.lvl3_adj = new Map()
 this.lvl2_adj = new Map()
@@ -57,44 +59,69 @@ fetch(`/assets/maps/my_lvl3_81_108.json`)
   .then(response => response.json())
   .then(data => {
     let arr = unflatten({arr:data, row_len:area_size})
-    this.lvl3_adj.set(new Phaser.Math.Vector2(0,0), arr)
-    this.ready = true
+    this.lvl3_adj.set(new Vec2(0,0), arr)
+    this.lvl3_adj_ready = true
     console.log("ready")
   });
 
+const pause = (duration) => new Promise(res => setTimeout(res, duration));
 
-registerPromiseWorker(function (msg) {
-  if (this.ready !== true) { throw new Error('not ready'); }
-  //console.log('Worker: Message received from main script')
+registerPromiseWorker(
+  function tryJob(msg) {//allow retries
+
+    try {
+      return doJob(msg)
+    } catch(err) {
+      if (err.message == "Try again soon") {
+        console.log("trying again soon")
+        return pause(100).then(()=>tryJob(msg))
+      }
+      throw err
+    }
+
+  }//end retries
+)
+
+function doJob(msg) {
   switch (msg.job) {
     case "make_map":
       if (msg.arg.x !== undefined && msg.arg.y !== undefined) {
         this.lvl2_xy.x = msg.arg.x
         this.lvl2_xy.y = msg.arg.y
+        //future code for moving by vector addition
       }
-      let centerMap = new Map()
-      lvl1_adj.set(new Phaser.Math.Vector2(0,0), centerMap)
-      return this.lvl3_adj
-      break
+      if (this.lvl3_adj_ready !== true) {
+        throw new Error("Try again soon")
+      }
+
+      for (let x=-1; x<=1; x++) { //fill lvl1_adj
+        for (let y=-1; y<=1; y++) {
+          let key = new Vec2(x,y)
+          if (this.lvl1_adj.has(key) === false) {
+            let id = new Vec2(this.lvl2_xy)
+            id.add(key)
+            console.log(id)
+            let area_obj = new Area(id)
+            this.lvl1_adj.set(key, area_obj)
+          }
+        }
+      }
+
+      //let centerMap = new Map()
+      //lvl1_adj.set(new Vec2(0,0), centerMap)
+      return this.lvl1_adj
     default:
       //console.log(myScene)
       //myArea = new Phaser.Tilemaps.Tilemap(myScene, { data: [], tileWidth: 2, tileHeight: 2 })
-      return "no such job"
+      throw new Error("No such job")
   }
-})
+}
 
-class Area
+class Area extends Map
 {
-	constructor(size)
+	constructor(id)
 	{
-		this.size = size
-		this.data = [];
-		for (var i = 0; i < size; i++) {
-			let x = [];
-			for (var j = 0; j < size; j++) {
-				x.push(0);
-			}
-			this.data.push(x);
-		}
+    super()
+		this.set("id", id)
 	}
 }
