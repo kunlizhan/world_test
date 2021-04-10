@@ -1,6 +1,8 @@
 const DUDE_KEY = 'dude'
 const walk_speed = 400
 const map_px = 128*16 //tiles * tile px size
+const tile_size = 16
+var scene = undefined
 var camera = undefined
 var areas = [
   [0,0,0],
@@ -8,7 +10,12 @@ var areas = [
   [0,0,0]
 ]
 var worker = undefined
-var retry = undefined
+
+function str_to_vec(str) {
+  let arr = str.split("_")
+  let vec = new Phaser.Math.Vector2(parseInt(arr[0]), parseInt(arr[1]))
+  return vec
+}
 
 import AreaL1 from '../AreaL1.js';
 import AreaL2 from '../AreaL2.js';
@@ -17,6 +24,7 @@ export default class GameScene extends Phaser.Scene
   constructor()
 	{
 		super('game-scene')
+    scene = this
     this.lvl3_xy = new Phaser.Math.Vector2(81,108) // Tingi on the lvl 3 map
     this.lvl2_xy = new Phaser.Math.Vector2(0,0) // start location on lvl 2 map
     this.lvl1_xy = new Phaser.Math.Vector2(0,0) // start location on lvl 1 map
@@ -43,8 +51,6 @@ export default class GameScene extends Phaser.Scene
     this.cursors = this.input.keyboard.createCursorKeys()
 		this.lvl3_arr = this.cache.json.get('lvl3_arr')
     this.areas = areas
-    //console.log(this)
-    //this.physics.world.drawDebug = false
 
     camera = this.cameras.main
     camera.startFollow(this.player)
@@ -53,44 +59,11 @@ export default class GameScene extends Phaser.Scene
     this.area_rect.setOrigin(0)// this shorthand moves origin from default center to top left
     this.area_current = this.physics.add.group(this.area_rect)
 
-    //this.area_L2 = new AreaL2({lvl3vec: this.lvl3_xy, scene: this})
-
-    areas[1][1] = new AreaL1(this.lvl2_xy, this, [0,0])
-    //this.updateAreas()
-
     //start new worker async job for creating area
-    this.lvl1_areas = new Map()
+    this.lvl1_adj = new Map()
 
-    retry = this.updateMaps.bind(this)
     this.updateMaps()
-
-    worker.postMessage(
-      {job:"make_map2", arg: "some args"}
-    ).then(function (response) {
-      console.log('Got response2: ')
-      console.log(response)
-    }).catch(function (err) {
-      console.log('error response2: ')
-      console.log(err.message); // 'naughty!'
-    })
 	}
-
-  updateMaps() {
-
-    worker.postMessage(
-      {job:"make_map", arg: this.lvl2_xy}
-    ).then(
-      function (response) {
-        console.log('Got response: ')
-        console.log(response)
-      }
-    ).catch(
-      function (err) {
-        console.log(`error response: ${err.message}`)
-        //retry()
-      }
-    )
-  }
 
   update()
   {
@@ -101,7 +74,7 @@ export default class GameScene extends Phaser.Scene
         player.setVelocityX(-walk_speed)
         player.anims.play('left', true)
         if (!this.physics.world.overlap(player, this.area_current)) {
-          this.updateAreas()
+          this.step_adj()
         }
     }
     else if (cursors.right.isDown)
@@ -109,7 +82,7 @@ export default class GameScene extends Phaser.Scene
         player.setVelocityX(walk_speed)
         player.anims.play('right', true)
         if (!this.physics.world.overlap(player, this.area_current)) {
-          this.updateAreas()
+          this.step_adj()
         }
     }
     else
@@ -121,14 +94,14 @@ export default class GameScene extends Phaser.Scene
     {
         player.setVelocityY(-walk_speed)
         if (!this.physics.world.overlap(player, this.area_current)) {
-          this.updateAreas()
+          this.step_adj()
         }
     }
     else if (cursors.down.isDown)
     {
         player.setVelocityY(walk_speed)
         if (!this.physics.world.overlap(player, this.area_current)) {
-          this.updateAreas()
+          this.step_adj()
         }
     }
     else
@@ -164,6 +137,92 @@ export default class GameScene extends Phaser.Scene
 
     return player
 	}
+
+  step_adj() {
+      let player_center = this.player.getCenter()
+    let delta = new Phaser.Math.Vector2(0,0);
+      /*console.log("player center:")
+      console.info(player_center)
+      console.log("area_rect.x:")
+      console.info(this.area_rect.x)*/
+    if (player_center.x < this.area_rect.x) {
+      delta.x = -1
+    } else if (player_center.x > this.area_rect.getRightCenter().x) {
+      delta.x = 1
+    }
+    if (player_center.y < this.area_rect.y) {
+      delta.y = -1
+    } else if (player_center.y > this.area_rect.getBottomCenter().y) {
+      delta.y = 1
+    }
+    this.area_rect.setPosition(
+      delta.x*this.area_rect.width+this.area_rect.x,
+      delta.y*this.area_rect.height+this.area_rect.y
+    )
+    this.updateMaps(delta)
+  }
+
+  updateMaps(delta) {
+
+    worker.postMessage(
+      {job:"make_map", move: delta}
+    ).then(
+      function (response) {
+        let new_adj = response
+        //console.log(new_adj)
+        //console.log(scene.lvl1_adj)
+
+        for (let [old_key, old_value] of scene.lvl1_adj.entries()) {
+          let old_id = old_value.get("id")
+          //console.log(id)
+          for (let [key, value] of new_adj.entries()) {
+            let id = value.get("id")
+            if (old_id === id) {
+              //console.log(`old matches`)
+              new_adj.set(key, old_value)
+              scene.lvl1_adj.delete(old_key)
+            } else {
+              //console.log(`old doesn't match`)
+            }
+          }
+          if (scene.lvl1_adj.has(old_key)) {
+            console.log(`delete old map`)
+            scene.lvl1_adj.get(old_key).get("cldr").destroy()
+            scene.lvl1_adj.get(old_key).get("map").destroy()
+            scene.lvl1_adj.delete(old_key)
+          }
+        }
+        //console.log(new_adj)
+        scene.lvl1_adj = new_adj
+        scene.renderMaps()
+      }
+    ).catch(
+      function (err) {
+        console.log(`error response: ${err.message}`)
+      }
+    )
+  }
+
+  renderMaps() {
+    for (let [key, value] of this.lvl1_adj.entries()) {
+      if (value.has("map") === false) {
+        console.log(`create new map`)
+        let arr = value.get("arr")
+        let map = scene.make.tilemap({ data: arr, tileWidth: tile_size, tileHeight: tile_size })
+        value.set("map", map)
+        //console.log(value)
+        let tiles = map.addTilesetImage('tiles_set', 'tiles_png', tile_size, tile_size, 1, 2)
+        let delta = str_to_vec(key)
+        //console.log(delta)
+        let layer = map.createLayer(0, tiles, delta.x*map_px+this.area_rect.x, delta.y*map_px+this.area_rect.y)
+      	map.setCollisionBetween(12,15)
+
+      	value.set("map", map)
+      	value.set("cldr", scene.physics.add.collider(scene.player, layer) )
+      }
+    }
+    console.log(this.lvl1_adj)
+  }
 
   updateAreas() {
     //console.log(areas[1][1])

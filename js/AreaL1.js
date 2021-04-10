@@ -6,7 +6,7 @@ import * as t_type from './t_type.js';
 const area_size = 128
 const tile_size = 16
 
-class Area
+class AreaArr
 {
 	constructor(size)
 	{
@@ -27,7 +27,7 @@ export default class AreaL1 {
   constructor(seed, scene, pos) {
 
     // Load a map from a 2D array of tile indices
-    let area_arr = new Area(area_size).data;
+    let area_arr = new AreaArr(area_size).data;
     // When loading from an array, make sure to specify the tileWidth and tileHeight
     let map = undefined
 
