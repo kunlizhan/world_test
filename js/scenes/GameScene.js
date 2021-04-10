@@ -42,6 +42,8 @@ export default class GameScene extends Phaser.Scene
     this.load.json('lvl3_arr', 'assets/maps/lvl3_arr.json')
     this.load.json(`my_lvl3_81_108`, `assets/maps/my_lvl3_81_108.json`)
 
+    this.load.plugin('rexvirtualjoystickplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexvirtualjoystickplugin.min.js', true);
+
 	}
 
   create()
@@ -49,6 +51,26 @@ export default class GameScene extends Phaser.Scene
     this.player = this.createPlayer()
     this.player.setDepth(1)
     this.cursors = this.input.keyboard.createCursorKeys()
+    this.keyInput = {}
+    this.keyInput.w = this.input.keyboard.addKey('W')
+    this.keyInput.a = this.input.keyboard.addKey('A')
+    this.keyInput.s = this.input.keyboard.addKey('S')
+    this.keyInput.d = this.input.keyboard.addKey('D')
+    this.joyStickBase = this.add.circle(0, 0, 100, 0x888888)
+    this.joyStickBase.setDepth(10)
+    this.joyStickThumb = this.add.circle(0, 0, 50, 0xcccccc)
+    this.joyStickThumb.setDepth(10)
+    this.joyStick = scene.plugins.get('rexvirtualjoystickplugin').add(this, {
+                x: 120,
+                y: 600,
+                radius: 100,
+                base: this.joyStickBase,
+                thumb: this.joyStickThumb,
+                // dir: '8dir',   // 'up&down'|0|'left&right'|1|'4dir'|2|'8dir'|3
+                // forceMin: 16,
+                // enable: true
+            })
+
 		this.lvl3_arr = this.cache.json.get('lvl3_arr')
     this.areas = areas
 
@@ -67,9 +89,16 @@ export default class GameScene extends Phaser.Scene
 
   update()
   {
-    var cursors = this.cursors
-    var player = this.player
-    if (cursors.left.isDown)
+    let cursors = this.cursors
+    let player = this.player
+    let keys = this.keyInput
+
+    let up = (cursors.up.isDown)||(keys.w.isDown)||(this.joyStick.up)
+    let left = (cursors.left.isDown)||(keys.a.isDown)||(this.joyStick.left)
+    let down = (cursors.down.isDown)||(keys.s.isDown)||(this.joyStick.down)
+    let right = (cursors.right.isDown)||(keys.d.isDown)||(this.joyStick.right)
+
+    if (left)
     {
         player.setVelocityX(-walk_speed)
         player.anims.play('left', true)
@@ -77,7 +106,7 @@ export default class GameScene extends Phaser.Scene
           this.step_adj()
         }
     }
-    else if (cursors.right.isDown)
+    else if (right)
     {
         player.setVelocityX(walk_speed)
         player.anims.play('right', true)
@@ -90,14 +119,14 @@ export default class GameScene extends Phaser.Scene
         player.setVelocityX(0)
         player.anims.play('turn')
     }
-    if (cursors.up.isDown)
+    if (up)
     {
         player.setVelocityY(-walk_speed)
         if (!this.physics.world.overlap(player, this.area_current)) {
           this.step_adj()
         }
     }
-    else if (cursors.down.isDown)
+    else if (down)
     {
         player.setVelocityY(walk_speed)
         if (!this.physics.world.overlap(player, this.area_current)) {

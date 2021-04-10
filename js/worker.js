@@ -121,14 +121,14 @@ var lvl3_adj = new Map()
 var lvl2_adj = new Map()
 var lvl1_adj = new Map()
 
-fetch(`/assets/maps/lvl3_arr.json`)
+fetch(`../assets/maps/lvl3_arr.json`)
   .then(response => response.json())
   .then(data => {
     let arr = unflatten({arr:data, row_len:area_size})
     lvl3_adj.set("0_0", arr)
   });
 
-fetch(`/assets/maps/my_lvl3_81_108.json`)
+fetch(`../assets/maps/my_lvl3_81_108.json`)
   .then(response => response.json())
   .then(data => {
     let arr = unflatten({arr:data, row_len:area_size})
