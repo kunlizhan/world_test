@@ -125,6 +125,7 @@ fetch(`../assets/maps/lvl3_arr.json`)
   .then(response => response.json())
   .then(data => {
     let arr = unflatten({arr:data, row_len:area_size})
+    arr = transpose(arr)
     lvl3_adj.set("0_0", arr)
   });
 
@@ -167,7 +168,6 @@ function doJob(msg) {
       if (msg.move !== undefined && msg.move.x !== undefined && msg.move.y !== undefined) {
         move.add({x:msg.move.x, y:msg.move.y})
         lvl2_xy.add(move)//moving by vector addition
-        //shift lvl1_adj
       }
       let new_adj = new Map()
       for (let x=-1; x<=1; x++) { //fill lvl1_adj
@@ -178,10 +178,10 @@ function doJob(msg) {
           old_key.add(move)
 
           if (lvl1_adj.has(vec_to_str(old_key)) === true) {
-            console.log(`moving old area_obj`)
+            //console.log(`moving old area_obj`) //use old area_obj if it exists
             new_adj.set( vec_to_str(key), lvl1_adj.get(vec_to_str(old_key)) )
           } else {
-            console.log(`making new area_obj`)
+            //console.log(`making new area_obj`) //otherwise create new one
             let id = new Vec2(lvl2_xy)
             id.add(key)
             let area_obj = new Area(vec_to_str(id))
@@ -191,7 +191,7 @@ function doJob(msg) {
           //
         }
       }
-      console.log(lvl2_adj.get("0_0"))
+      //console.log(lvl2_adj.get("0_0"))
       delete lvl1_adj
       lvl1_adj = new_adj
       return lvl1_adj
@@ -285,6 +285,6 @@ function make_path(area_arr, ps) {
       }
       break
   }
-  area_arr = transpose(area_arr)
+  //area_arr = transpose(area_arr)
   return area_arr
 }

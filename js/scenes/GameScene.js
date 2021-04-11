@@ -2,6 +2,7 @@ const DUDE_KEY = 'dude'
 const walk_speed = 400
 const map_px = 128*16 //tiles * tile px size
 const tile_size = 16
+const max_z = 16777271
 var scene = undefined
 var camera = undefined
 var areas = [
@@ -45,31 +46,12 @@ export default class GameScene extends Phaser.Scene
     this.load.plugin('rexvirtualjoystickplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexvirtualjoystickplugin.min.js', true);
 
 	}
-
   create()
 	{
     this.player = this.createPlayer()
     this.player.setDepth(1)
-    this.cursors = this.input.keyboard.createCursorKeys()
-    this.keyInput = {}
-    this.keyInput.w = this.input.keyboard.addKey('W')
-    this.keyInput.a = this.input.keyboard.addKey('A')
-    this.keyInput.s = this.input.keyboard.addKey('S')
-    this.keyInput.d = this.input.keyboard.addKey('D')
-    this.joyStickBase = this.add.circle(0, 0, 100, 0x888888)
-    this.joyStickBase.setDepth(10)
-    this.joyStickThumb = this.add.circle(0, 0, 50, 0xcccccc)
-    this.joyStickThumb.setDepth(10)
-    this.joyStick = scene.plugins.get('rexvirtualjoystickplugin').add(this, {
-                x: 120,
-                y: 600,
-                radius: 100,
-                base: this.joyStickBase,
-                thumb: this.joyStickThumb,
-                // dir: '8dir',   // 'up&down'|0|'left&right'|1|'4dir'|2|'8dir'|3
-                // forceMin: 16,
-                // enable: true
-            })
+    this.makeInputs()
+
 
 		this.lvl3_arr = this.cache.json.get('lvl3_arr')
     this.areas = areas
@@ -251,6 +233,32 @@ export default class GameScene extends Phaser.Scene
       }
     }
     console.log(this.lvl1_adj)
+  }
+
+  makeInputs() {
+    this.cursors = this.input.keyboard.createCursorKeys()
+    this.keyInput = {}
+    this.keyInput.w = this.input.keyboard.addKey('W')
+    this.keyInput.a = this.input.keyboard.addKey('A')
+    this.keyInput.s = this.input.keyboard.addKey('S')
+    this.keyInput.d = this.input.keyboard.addKey('D')
+    this.joyStickBase = this.add.circle(0, 0, 100, 0x888888)
+    this.joyStickBase.setDepth(max_z)
+    this.joyStickThumb = this.add.circle(0, 0, 50, 0xcccccc)
+    this.joyStickThumb.setDepth(max_z)
+    this.joyStick = scene.plugins.get('rexvirtualjoystickplugin').add(this, {
+        x: 81,
+        y: window.innerHeight-81,
+        radius: 100,
+        base: this.joyStickBase,
+        thumb: this.joyStickThumb,
+        // dir: '8dir',   // 'up&down'|0|'left&right'|1|'4dir'|2|'8dir'|3
+        // forceMin: 16,
+        // enable: true
+    })
+    this.scale.on('resize', function (gameSize) {
+      this.joyStick.setPosition(81, window.innerHeight-81)
+    }, this)
   }
 
   updateAreas() {

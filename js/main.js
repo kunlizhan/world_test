@@ -2,8 +2,8 @@ import GameScene from './scenes/GameScene.js';
 
 const config = {
 	type: Phaser.AUTO,
-	width: 1080,
-	height: 720,
+	//width: 1080,
+	//height: 720,
   //width: 2048,
 	//height: 2048,
 	physics: {
@@ -13,6 +13,12 @@ const config = {
 			debug: true
 		}
 	},
+  scale: {
+		mode: Phaser.Scale.RESIZE,
+		parent: 'worldview',
+		width: window.innerWidth,
+		height: window.innerHeight
+  },
 	scene: [GameScene]
 }
 const myGame = new Phaser.Game(config)
