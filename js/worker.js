@@ -234,14 +234,7 @@ class Area extends Map
     let arr = this.get("arr")
   	switch(type) {
   		case 3:
-        arr = []
-        for (var i = 0; i < area_size; i++) {
-          let x = [];
-          for (var j = 0; j < area_size; j++) {
-            x.push(8);
-          }
-          arr.push(x);
-        }
+        arr = make_desert(arr, ps)
   			break
       case 5:
         arr = []
@@ -254,6 +247,7 @@ class Area extends Map
         }
         break
       case 6:
+        arr = make_desert(arr, ps)
         arr = make_path(arr, ps)
         break
   	}
@@ -287,4 +281,62 @@ function make_path(area_arr, ps) {
   }
   //area_arr = transpose(area_arr)
   return area_arr
+}
+
+function make_desert(area_arr, ps) {
+
+  ps.set_bit_len(5)
+  let dirt_count = ps.next_bits() + 32
+  for (let i=1; i <= dirt_count; i++) {
+    make_patch({area_arr:area_arr, ps:ps, set:[1,1,4,5], size_max:2})
+  }
+
+  ps.set_bit_len(4)
+  let grass_count = ps.next_bits()
+  for (let i=1; i <= grass_count; i++) {
+    make_patch({area_arr:area_arr, ps:ps, set:[8,9,10,11], size_max:4})
+  }
+  return area_arr
+}
+
+function make_patch({area_arr, ps, set, size_max=2}) {
+  let max = area_arr.length
+  ps.set_bit_len(2)
+  let size = Math.min(ps.next_bits(),size_max)
+  ps.set_bit_len(7)
+  let x = ps.next_bits()
+  let y = ps.next_bits()
+  for (let x1=-size; x1<=size; x1++) { //for adjacents
+    for (let y1=-size/2; y1<=size/2; y1++) {
+      let x2 = x+x1
+      let y2 = y+y1
+      if (0 <= x2 && x2<max && 0 <= y2 && y2<max) {//keep in bounds
+        //console.log(`${x2},${y2}`)
+        let ab_x1 = Math.abs(x1)
+        let ab_y1 = Math.abs(y1)
+        let man_dist = (ab_x1+ab_y1)
+        ps.set_bit_len(3)
+        let rng = ps.next_bits()
+        switch (man_dist) {
+          case 0:
+            area_arr[x2][y2] = set[man_dist]
+            break
+          case 1:
+            if (rng < 3) { area_arr[x2][y2] = set[man_dist] }
+            else { area_arr[x2][y2] = set[man_dist+1] }
+            break
+          case 2:
+            if (rng < 5) { area_arr[x2][y2] = set[man_dist] }
+            else { area_arr[x2][y2] = set[man_dist+1] }
+            break
+          case 3:
+            if (rng < 4) { area_arr[x2][y2] = set[man_dist] }
+            break
+          case 4:
+            if (rng < 2) { area_arr[x2][y2] = set[3] }
+            break
+        }
+      }
+    }
+  }
 }
