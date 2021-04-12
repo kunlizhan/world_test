@@ -307,8 +307,8 @@ function make_patch({area_arr, ps, set, size_max=2}) {
     for (var y = 0; y < max; y++) {
       var value = noise.simplex2(x*scale, y*scale);
       //console.log(value)
-      //value = (value+1)/2
-      area_arr[x][y] = 8+(Math.floor(value)*4)
+      value = Math.floor((value+1)*2)
+      area_arr[x][y] = 8+value
     }
   }
 }
