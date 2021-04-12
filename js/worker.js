@@ -185,7 +185,13 @@ function doJob(msg) {
             //console.log(`making new area_obj`) //otherwise create new one
             let id = new Vec2(lvl2_xy)
             id.add(key)
-            let area_obj = new Area(vec_to_str(id))
+            let parent = new Vec2(lvl3_xy)
+            if (id.x < 0) { parent.x -= 1 }
+            if (id.x >= area_size) { parent.x += 1 }
+            if (id.y < 0) { parent.y -= 1 }
+            if (id.y >= area_size) { parent.y += 1 }
+
+            let area_obj = new Area(parent, id)
             area_obj.genArr({lvl:1})
             new_adj.set(vec_to_str(key), area_obj)
           }
@@ -205,10 +211,14 @@ function doJob(msg) {
 
 class Area extends Map
 {
-	constructor(id)
+	constructor(parent, id)
 	{
     super()
-		this.set("id", id)
+		this.set("id", vec_to_str(id))
+    let g_vec = parent.scale(128)
+    g_vec.add(id)
+    this.set("g_vec", g_vec)
+    //console.log(this.get("g_vec"))
     let arr = []
 		for (var i = 0; i < area_size; i++) {
 			let x = [];
@@ -227,7 +237,7 @@ class Area extends Map
     let vec_id = str_to_vec(this.get("id"))
     let type = lvl2_adj.get("0_0")[vec_id.x][vec_id.y]
     type = type-1
-    console.log(`area type of ${this.get("id")}: ${type}`)
+    //console.log(`area type of ${this.get("id")}: ${type}`)
 
     let ps = new PseudoRand(this.get("id"))
   	ps.set_bit_len(1)
@@ -235,7 +245,7 @@ class Area extends Map
     let arr = this.get("arr")
   	switch(type) {
   		case 3:
-        arr = make_desert(arr, ps)
+        arr = make_desert(arr, this.get("g_vec"))
   			break
       case 5:
         arr = []
@@ -248,11 +258,11 @@ class Area extends Map
         }
         break
       case 6:
-        arr = make_desert(arr, ps)
+        arr = make_desert(arr, this.get("g_vec"))
         arr = make_path(arr, ps)
         break
   	}
-    this.set("arr", arr)
+    this.set("arr", transpose(arr))
   }
 }
 
@@ -280,37 +290,33 @@ function make_path(area_arr, ps) {
       }*/
       break
   }
-  //area_arr = transpose(area_arr)
   return area_arr
 }
 
-function make_desert(area_arr, ps) {
-
-  ps.set_bit_len(5)
-  let dirt_count = ps.next_bits() + 32
-  for (let i=1; i <= dirt_count; i++) {
-    make_patch({area_arr:area_arr, ps:ps, set:[1,1,4,5], size_max:2})
-  }
-
-  ps.set_bit_len(4)
-  let grass_count = ps.next_bits()
-  for (let i=1; i <= grass_count; i++) {
-    make_patch({area_arr:area_arr, ps:ps, set:[8,9,10,11], size_max:4})
+function make_desert(area_arr, g_vec) {
+  let parent = g_vec.scale(128)
+  console.log(parent)
+  let max = area_arr.length
+  let scale = 0.05
+  for (let x = 0; x < max; x++) {
+    for (let y = 0; y < max; y++) {
+      let large = noise.simplex2((x+parent.x)*scale, (y+parent.y)*scale)
+      large = (Math.min(large, 0)+1)
+      let small = noise.simplex2((x+parent.x)*0.5, (y+parent.y)*0.5)
+      small = (Math.min(small, 0)+1)
+      let value = large/2 + small/2// range is 0, 1
+      //value = (2+value)/4 //range is 0, 1
+      //value = (Math.min(value,0.5))*2 //take only lesser half and scale it to range of 0, 1
+      value = Math.floor(value*10)
+      value = (value>=4) ? -8 : value
+      area_arr[x][y] = 8+value
+    }
   }
   return area_arr
 }
 
 function make_patch({area_arr, ps, set, size_max=2}) {
-  let max = area_arr.length
-  let scale = 0.05
-  for (var x = 0; x < max; x++) {
-    for (var y = 0; y < max; y++) {
-      var value = noise.simplex2(x*scale, y*scale);
-      //console.log(value)
-      value = Math.floor((value+1)*2)
-      area_arr[x][y] = 8+value
-    }
-  }
+
 }
 
 function make_patch2({area_arr, ps, set, size_max=2}) {
