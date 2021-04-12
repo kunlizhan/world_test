@@ -1,6 +1,7 @@
 importScripts('dep/promise-worker.register.js')
 importScripts('https://cdn.jsdelivr.net/npm/phaser@3.53.1/dist/phaser.min.js')
 importScripts('dep/sjcl.js')
+importScripts('dep/perlin.js')
 importScripts('area_algos_copy.js')
 
 //custom_maths start
@@ -261,13 +262,13 @@ function make_path(area_arr, ps) {
     case 0:
       area_arr = rand_walk_ortho({area_arr:area_arr, pseudorand:ps, tile_index:2})
       if (ps.next_bits() == 1) {
-        area_arr = matrix_rot_R(area_arr)
+        //area_arr = matrix_rot_R(area_arr)
       }
       break
     case 1:
       area_arr = rand_walk_diag({area_arr:area_arr, pseudorand:ps, tile_index:2})
       ps.set_bit_len(2)
-      switch (ps.next_bits()) {
+      /*switch (ps.next_bits()) {
         case 0:
           area_arr = matrix_rot_R(area_arr)
         case 1:
@@ -276,7 +277,7 @@ function make_path(area_arr, ps) {
           area_arr = matrix_rot_R(area_arr)
         case 3:
           break
-      }
+      }*/
       break
   }
   //area_arr = transpose(area_arr)
@@ -300,6 +301,19 @@ function make_desert(area_arr, ps) {
 }
 
 function make_patch({area_arr, ps, set, size_max=2}) {
+  let max = area_arr.length
+  let scale = 0.05
+  for (var x = 0; x < max; x++) {
+    for (var y = 0; y < max; y++) {
+      var value = noise.simplex2(x*scale, y*scale);
+      //console.log(value)
+      //value = (value+1)/2
+      area_arr[x][y] = 8+(Math.floor(value)*4)
+    }
+  }
+}
+
+function make_patch2({area_arr, ps, set, size_max=2}) {
   let max = area_arr.length
   ps.set_bit_len(2)
   let size = Math.min(ps.next_bits(),size_max)

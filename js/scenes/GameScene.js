@@ -44,14 +44,11 @@ export default class GameScene extends Phaser.Scene
     this.load.json(`my_lvl3_81_108`, `assets/maps/my_lvl3_81_108.json`)
 
     this.load.plugin('rexvirtualjoystickplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexvirtualjoystickplugin.min.js', true);
-
-	}
+  }
   create()
 	{
     this.player = this.createPlayer()
-    this.player.setDepth(1)
     this.makeInputs()
-
 
 		this.lvl3_arr = this.cache.json.get('lvl3_arr')
     this.areas = areas
@@ -145,7 +142,7 @@ export default class GameScene extends Phaser.Scene
 			frameRate: 10,
 			repeat: -1
 		})
-
+    player.setDepth(1)
     return player
 	}
 
