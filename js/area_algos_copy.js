@@ -1,9 +1,16 @@
-function rand_walk_ortho({area_arr, pseudorand, tile_index}) {
+function rand_walk_ortho({area_arr, pseudorand, tile_index, fill}) { //draw horizontal, endpoints in top quadrants
   let array = area_arr
   let area_size = array.length
   let use_tile = tile_index
+  let do_fill = (fill==undefined)? false : true
+  //console.log(do_fill)
   function set_c_tile_ind() {
-    array[c_x][c_y] = use_tile
+    array[c_y][c_x] = use_tile
+    if (do_fill) {
+      for (let y=c_y-1; y >= 0; y--) {
+        array[y][c_x] = fill
+      }
+    }
   }
 
   let target_x = area_size-1
@@ -85,14 +92,14 @@ function rand_walk_ortho({area_arr, pseudorand, tile_index}) {
   //console.error("done path")
   return array
 }
-function rand_walk_diag({area_arr, pseudorand, tile_index}) {
+function rand_walk_diag({area_arr, pseudorand, tile_index}) { // draw from left to top, in left top quadrant
   let array = area_arr
   let area_size = array.length
   let use_tile = tile_index
-  let c_x = 0
-  let c_y = Math.floor((area_size-1)/2)
+  c_x = 0
+  c_y = Math.floor((area_size-1)/2)
   function set_c_tile_ind() {
-    array[c_x][c_y] = use_tile
+    array[c_y][c_x] = use_tile
   }
 
   let target_x = Math.floor((area_size-1)/2)

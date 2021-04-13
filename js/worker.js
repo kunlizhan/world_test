@@ -235,13 +235,37 @@ class Area extends Map
       throw new Error("lvl2 not ready")
     }
     let vec_id = str_to_vec(this.get("id"))
-    let type = lvl2_adj.get("0_0")[vec_id.x][vec_id.y]
-    type = type-1
-    //console.log(`area type of ${this.get("id")}: ${type}`)
+    let types = new Map() //key is tile type, value is quadrant
+    function add_type(quadrant) {
+      let x = (quadrant==1 || quadrant==4)? 0 : -1
+      let y = (quadrant==1 || quadrant==2)? -1 : 0
+      let type = lvl2_adj.get("0_0")[vec_id.x+x][vec_id.y+y]-1
+      types.has(type)? types.get(type).push(quadrant) : types.set(type, [quadrant])
+    }
+    for (let n=1; n<=4; n++) { add_type(n) }
+    console.log(types)
+    let trans = ""
+    switch (types.size) {
+      case 1: trans = "none"
+      break
+      case 2: break
+      case 3:
+      let quads = undefined
+        function get_longest(value, key) {
+          //console.log(value)
+          if (value.length == 2) { quads = value }
+        }
+        types.forEach(get_longest)
+        let diff = Math.abs(quads[0]-quads[1])
+        //console.log(diff)
+        if (diff == 1) {trans = "half"} else {trans = "corners"}
+        break
+      case 4: trans = "corners"
+    }
+    console.log(trans)
 
+    let type = lvl2_adj.get("0_0")[vec_id.x][vec_id.y]-1
     let ps = new PseudoRand(this.get("id"))
-  	ps.set_bit_len(1)
-    //type = ps.next_bits()
     let arr = this.get("arr")
   	switch(type) {
   		case 3:
@@ -262,7 +286,7 @@ class Area extends Map
         arr = make_path(arr, ps)
         break
   	}
-    this.set("arr", transpose(arr))
+    this.set("arr", arr)
   }
 }
 
@@ -270,7 +294,7 @@ function make_path(area_arr, ps) {
   ps.set_bit_len(1)
   switch (ps.next_bits()) {
     case 0:
-      area_arr = rand_walk_ortho({area_arr:area_arr, pseudorand:ps, tile_index:2})
+      area_arr = rand_walk_ortho({area_arr:area_arr, pseudorand:ps, tile_index:2, fill: 13})
       if (ps.next_bits() == 1) {
         //area_arr = matrix_rot_R(area_arr)
       }
@@ -295,7 +319,7 @@ function make_path(area_arr, ps) {
 
 function make_desert(area_arr, g_vec) {
   let parent = g_vec.scale(128)
-  console.log(parent)
+  //console.log(parent)
   let max = area_arr.length
   let scale = 0.05
   for (let x = 0; x < max; x++) {
@@ -307,12 +331,19 @@ function make_desert(area_arr, g_vec) {
       let value = large/2 + small/2// range is 0, 1
       //value = (2+value)/4 //range is 0, 1
       //value = (Math.min(value,0.5))*2 //take only lesser half and scale it to range of 0, 1
-      value = Math.floor(value*10)
+      value = Math.floor(value*8)
       value = (value>=4) ? -8 : value
-      area_arr[x][y] = 8+value
+      area_arr[y][x] = 8+value//phaser uses y first in 2d array
     }
   }
   return area_arr
+}
+
+function make_path_perlin(area_arr, g_vec) {
+  let parent = g_vec.scale(128)
+  let max = area_arr.length
+  let scale = 0.05
+
 }
 
 function make_patch({area_arr, ps, set, size_max=2}) {
