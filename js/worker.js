@@ -229,6 +229,48 @@ class Area extends Map
 		}
     this.set("arr", arr)
 	}
+  terr_from_index(ind) {
+    if (ind===1) {return ind}
+    const set = [3,5,7,11,13,17,19]
+    for (let p of set){
+      if (ind%p === 0) {
+        return p
+      }
+    }
+    throw new Error("no terrain type for ind: "+ind)
+  }
+  path_from_index(ind) {
+    return (ind%2===0)? true : false
+  }
+  get_trans_type(types){
+    function key_of_longest(value, key) {
+      let key_of = undefined
+      let record = []
+      for ([key, value] of types) {
+        if (value.length > record.length) {
+          key_of = key
+          record = value
+        }
+      }
+      return key_of
+    }
+
+    let longest = types.get(key_of_longest(types))
+    switch (types.size) {
+      case 1: return "no transition"
+      case 4: return "4 corners"
+      case 2:
+        if (longest.length == 3) { return "1 corner" }
+        else {
+          let diff = Math.abs(longest[0]-longest[1])
+          if (diff == 2) {return "2 and 2 corners"} else {return "half and half"}
+        }
+        break
+      case 3:
+        let diff = Math.abs(longest[0]-longest[1])
+        if (diff == 2) {return "2 and 2 corners"} else {return "half and 2 corners"}
+    }
+  }
 
   genArr({lvl=1}) {
     if (lvl2_adj.has("0_0") === false) {
@@ -239,29 +281,13 @@ class Area extends Map
     function add_type(quadrant) {
       let x = (quadrant==1 || quadrant==4)? 0 : -1
       let y = (quadrant==1 || quadrant==2)? -1 : 0
-      let type = lvl2_adj.get("0_0")[vec_id.x+x][vec_id.y+y]-1
+      let ind = lvl2_adj.get("0_0")[vec_id.x+x][vec_id.y+y]-1
+      let type = Area.prototype.terr_from_index(ind)
       types.has(type)? types.get(type).push(quadrant) : types.set(type, [quadrant])
     }
     for (let n=1; n<=4; n++) { add_type(n) }
     console.log(types)
-    let trans = ""
-    switch (types.size) {
-      case 1: trans = "none"
-      break
-      case 2: break
-      case 3:
-      let quads = undefined
-        function get_longest(value, key) {
-          //console.log(value)
-          if (value.length == 2) { quads = value }
-        }
-        types.forEach(get_longest)
-        let diff = Math.abs(quads[0]-quads[1])
-        //console.log(diff)
-        if (diff == 1) {trans = "half"} else {trans = "corners"}
-        break
-      case 4: trans = "corners"
-    }
+    let trans = this.get_trans_type(types)
     console.log(trans)
 
     let type = lvl2_adj.get("0_0")[vec_id.x][vec_id.y]-1
