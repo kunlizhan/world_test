@@ -18,8 +18,6 @@ function str_to_vec(str) {
   return vec
 }
 
-import AreaL1 from '../AreaL1.js';
-import AreaL2 from '../AreaL2.js';
 export default class GameScene extends Phaser.Scene
 {
   constructor()
@@ -206,7 +204,7 @@ export default class GameScene extends Phaser.Scene
       }
     ).catch(
       function (err) {
-        console.log(`error response: ${err.message}`)
+        console.error(`error response: ${err.message}`)
       }
     )
   }
@@ -256,81 +254,6 @@ export default class GameScene extends Phaser.Scene
     this.scale.on('resize', function (gameSize) {
       this.joyStick.setPosition(81, window.innerHeight-81)
     }, this)
-  }
-
-  updateAreas() {
-    //console.log(areas[1][1])
-    let player_center = this.player.getCenter()
-    let delta = new Phaser.Math.Vector2(0,0);
-      /*console.log("player center:")
-      console.info(player_center)
-      console.log("area_rect.x:")
-      console.info(this.area_rect.x)*/
-    if (player_center.x < this.area_rect.x) {
-      delta.x = -1
-    } else if (player_center.x > this.area_rect.getRightCenter().x) {
-      delta.x = 1
-    }
-    if (player_center.y < this.area_rect.y) {
-      delta.y = -1
-    } else if (player_center.y > this.area_rect.getBottomCenter().y) {
-      delta.y = 1
-    }
-    console.log("delta: "+ delta.x+","+delta.y )
-    if (delta.x == -1) { //if new center is to be the 0th column, unshift to insert empty column while moving existing ones to the right
-      for (let area of areas[2]) {
-        area.cldr.destroy()
-        area.map.destroy()
-      }
-      areas.pop()
-      areas.unshift([0,0,0])
-    } else if (delta.x == 1) {
-      for (let area of areas[0]) {
-        area.cldr.destroy()
-        area.map.destroy()
-      }
-      areas.shift()
-      areas.push([0,0,0])
-    }
-    if (delta.y == -1) {
-      for (let col of areas) {
-        if (col[2] != 0) {
-          col[2].cldr.destroy()
-          col[2].map.destroy()
-        }
-        col.pop()
-        col.unshift(0)
-      }
-    } else if (delta.y == 1) {
-      for (let col of areas) {
-        if (col[0] != 0) {
-          col[0].cldr.destroy()
-          col[0].map.destroy()
-        }
-        col.shift()
-        col.push(0)
-      }
-    }
-    //always runs
-    this.lvl2_xy = this.lvl2_xy.add(delta)
-    let center = areas[1][1]['map']
-    let mx = center.tileToWorldXY(0, 0).x
-    let my = center.tileToWorldXY(0, 0).y
-    for (let col in areas) {
-      for (let row in areas[col]) {
-        if (areas[col][row] == 0) {
-          let old = new Phaser.Math.Vector2(this.lvl2_xy)
-          let new1 = new Phaser.Math.Vector2(parseInt(col)-1,parseInt(row)-1)
-          //console.log("new1: "+ new1.x+","+new1.y )
-          var new_seed = old.add(new1)
-          areas[col][row] = new AreaL1(new_seed, this, [mx+(col-1)*map_px, my+(row-1)*map_px])
-        }
-      }
-    }
-    console.log("lvl2_xy: "+ this.lvl2_xy.x+","+this.lvl2_xy.y )
-    console.log("this.areas:")
-    console.log(this.areas)
-    this.area_rect.setPosition(mx, my)
   }
 
 }

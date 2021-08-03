@@ -1,16 +1,14 @@
 <!doctype html>
 <html>
   <head>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <link rel="stylesheet" href="style.css">
+    <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script><script defer src="js/dep/sjcl.js"></script> <!-- crypto library -->
+    <script defer src="//cdn.jsdelivr.net/npm/phaser@3.53.1/dist/phaser.min.js"></script><!-- phaser -->
+    <script defer src="https://npmcdn.com/promise-worker/dist/promise-worker.js"></script><!-- promise wrapper for workers -->
+    <script src="js/main.js" type="module"></script><!-- main -->
+    <link rel="stylesheet" href="style.css">
   </head>
   <body>
-	<div class="tile" id="worldview">
-	</div>
-
-	<script src="js/dep/sjcl.js"></script> <!-- crypto library -->
-  <script src="//cdn.jsdelivr.net/npm/phaser@3.53.1/dist/phaser.min.js"></script><!-- phaser -->
-  <script src="https://npmcdn.com/promise-worker/dist/promise-worker.js"></script><!-- promise wrapper for workers -->
-  <script src="js/main.js" type="module"></script><!-- main -->
+	   <div class="tile" id="worldview">
+	    </div>
   </body>
 </html>

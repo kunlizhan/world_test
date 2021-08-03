@@ -53,11 +53,6 @@ function str_to_vec(str) {
   return vec
 }
 //PseudoRand
-function pad(str, digits) {
-  while (str.length < digits) {str = "0" + str;}
-  return str;
-}
-
 class PseudoRand
 {
   constructor(seed) {
@@ -97,7 +92,7 @@ class PseudoRand
     //console.log("this.str : "+this.str )
     let chars = this.str.slice(-this.chars_per_n)
     chars = parseInt(chars, this.m_base)
-    chars = pad(chars.toString(2), this.bits_per_chars)
+    chars = chars.toString(2).padStart(this.bits_per_chars, `0`)
     this.bits = chars+this.bits
     this.str = this.str.slice(0, -this.chars_per_n)
   }
@@ -138,7 +133,7 @@ fetch(`../assets/maps/my_lvl3_81_108.json`)
     lvl2_adj.set("0_0", arr)
   });
 
-const pause = (duration) => new Promise(res => setTimeout(res, duration));
+const wait = (duration) => new Promise(res => setTimeout(res, duration));
 
 registerPromiseWorker(
   function tryJob(msg) {//allow retries
@@ -148,7 +143,7 @@ registerPromiseWorker(
     } catch(err) {
       if (err.message == "Try again soon") {
         console.log("trying again soon")
-        return pause(100).then(()=>tryJob(msg))
+        return wait(100).then(()=>tryJob(msg))
       }
       throw err
     }
@@ -229,7 +224,7 @@ class Area extends Map
 		}
     this.set("arr", arr)
 	}
-  terr_from_index(ind) {
+  terr_from_index(ind) { //returns the smallest prime that is a factor of ind, this represents terrain type, which combine by multiplication
     if (ind===1) {return ind}
     const set = [3,5,7,11,13,17,19]
     for (let p of set){
@@ -277,7 +272,7 @@ class Area extends Map
       throw new Error("lvl2 not ready")
     }
     let vec_id = str_to_vec(this.get("id"))
-    let types = new Map() //key is tile type, value is quadrant
+    let types = new Map() //key is tile type, value is one or more quadrants that has that type
     function add_type(quadrant) {
       let x = (quadrant==1 || quadrant==4)? 0 : -1
       let y = (quadrant==1 || quadrant==2)? -1 : 0
