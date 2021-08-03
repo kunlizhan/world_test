@@ -175,31 +175,24 @@ export default class GameScene extends Phaser.Scene
     ).then(
       function (response) {
         let new_adj = response
-        //console.log(new_adj)
-        //console.log(scene.lvl1_adj)
 
-        for (let [old_key, old_value] of scene.lvl1_adj.entries()) {
+        for (let [old_key, old_value] of scene.lvl1_adj.entries()) { //for every area already in lvl1_adj,
           let old_id = old_value.get("id")
-          //console.log(id)
-          for (let [key, value] of new_adj.entries()) {
+          for (let [key, value] of new_adj.entries()) { //check if it will still be in use once updated,
             let id = value.get("id")
-            if (old_id === id) {
-              //console.log(`old matches`)
-              new_adj.set(key, old_value)
+            if (old_id === id) { //if yes, then copy value to new_adj and delete this area in lvl1_adj,
+              new_adj.set(key, old_value) //old_value needs to be copied because it contains references to Phaser objects for this area
               scene.lvl1_adj.delete(old_key)
             } else {
-              //console.log(`old doesn't match`)
             }
           }
-          if (scene.lvl1_adj.has(old_key)) {
-            console.log(`delete old map`)
+          if (scene.lvl1_adj.has(old_key)) { //now all remaining areas in lvl1_adj are those that are not in new_adj, so we destroy its related Phaser objects
             scene.lvl1_adj.get(old_key).get("cldr").destroy()
             scene.lvl1_adj.get(old_key).get("map").destroy()
             scene.lvl1_adj.delete(old_key)
           }
         }
-        //console.log(new_adj)
-        scene.lvl1_adj = new_adj
+        scene.lvl1_adj = new_adj //updated
         scene.renderMaps()
       }
     ).catch(
@@ -212,7 +205,6 @@ export default class GameScene extends Phaser.Scene
   renderMaps() {
     for (let [key, value] of this.lvl1_adj.entries()) {
       if (value.has("map") === false) {
-        console.log(`create new map`)
         let arr = value.get("arr")
         let map = scene.make.tilemap({ data: arr, tileWidth: tile_size, tileHeight: tile_size })
         value.set("map", map)
@@ -227,7 +219,7 @@ export default class GameScene extends Phaser.Scene
       	value.set("cldr", scene.physics.add.collider(scene.player, layer) )
       }
     }
-    console.log(this.lvl1_adj)
+    //console.log(this.lvl1_adj)
   }
 
   makeInputs() {

@@ -176,6 +176,7 @@ function doJob(msg) {
           if (lvl1_adj.has(vec_to_str(old_key)) === true) {
             //console.log(`moving old area_obj`) //use old area_obj if it exists
             new_adj.set( vec_to_str(key), lvl1_adj.get(vec_to_str(old_key)) )
+            //new_adj.set( vec_to_str(key), null )
           } else {
             //console.log(`making new area_obj`) //otherwise create new one
             let id = new Vec2(lvl2_xy)
@@ -194,7 +195,6 @@ function doJob(msg) {
         }
       }
       //console.log(lvl2_adj.get("0_0"))
-      delete lvl1_adj
       lvl1_adj = new_adj
       return lvl1_adj
     default:
@@ -281,9 +281,9 @@ class Area extends Map
       types.has(type)? types.get(type).push(quadrant) : types.set(type, [quadrant])
     }
     for (let n=1; n<=4; n++) { add_type(n) }
-    console.log(types)
+    //console.log(types)
     let trans = this.get_trans_type(types)
-    console.log(trans)
+    //console.log(trans)
 
     let type = lvl2_adj.get("0_0")[vec_id.x][vec_id.y]-1
     let ps = new PseudoRand(this.get("id"))
