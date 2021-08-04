@@ -138,9 +138,9 @@ const wait = (duration) => new Promise(res => setTimeout(res, duration));
 registerPromiseWorker(
   function tryJob(msg) {//allow retries
 
-    try {
-      return doJob(msg)
-    } catch(err) {
+    try { return doJob(msg) }
+
+    catch(err) {
       if (err.message == "Try again soon") {
         console.log("trying again soon")
         return wait(100).then(()=>tryJob(msg))
@@ -171,7 +171,7 @@ function doJob(msg) {
           //
           let key = new Vec2(x,y)
           let old_key = new Vec2(key)
-          old_key.add(move)
+          old_key.add(move) //if key of new area represents an area that already exists in adj, this would be its current key
 
           if (lvl1_adj.has(vec_to_str(old_key)) === true) {
             //console.log(`moving old area_obj`) //use old area_obj if it exists
@@ -197,6 +197,13 @@ function doJob(msg) {
       //console.log(lvl2_adj.get("0_0"))
       lvl1_adj = new_adj
       return lvl1_adj
+    case "get_lvl2":
+      if (lvl2_adj.has("0_0") === false) {
+        throw new Error("Try again soon")
+      }
+      return lvl2_adj.get("0_0")
+    case "get_lvl2xy":
+      return lvl2_xy
     default:
       //console.log(myScene)
       //myArea = new Phaser.Tilemaps.Tilemap(myScene, { data: [], tileWidth: 2, tileHeight: 2 })
@@ -238,10 +245,10 @@ class Area extends Map
     return (ind%2===0)? true : false
   }
   get_trans_type(types){
-    function key_of_longest(value, key) {
+    function key_of_longest() {
       let key_of = undefined
       let record = []
-      for ([key, value] of types) {
+      for (let [key, value] of types) {
         if (value.length > record.length) {
           key_of = key
           record = value
@@ -250,7 +257,7 @@ class Area extends Map
       return key_of
     }
 
-    let longest = types.get(key_of_longest(types))
+    let longest = types.get(key_of_longest())
     switch (types.size) {
       case 1: return "no transition"
       case 4: return "4 corners"
@@ -258,9 +265,8 @@ class Area extends Map
         if (longest.length == 3) { return "1 corner" }
         else {
           let diff = Math.abs(longest[0]-longest[1])
-          if (diff == 2) {return "2 and 2 corners"} else {return "half and half"}
+          if (diff == 2) {return "2 and 2 corners"} else {return "half and half"} //only diagonal corners, quadrants (1,3) or (2,4) will have difference of exactly 2
         }
-        break
       case 3:
         let diff = Math.abs(longest[0]-longest[1])
         if (diff == 2) {return "2 and 2 corners"} else {return "half and 2 corners"}

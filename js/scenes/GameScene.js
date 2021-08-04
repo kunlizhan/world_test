@@ -62,6 +62,21 @@ export default class GameScene extends Phaser.Scene
     this.lvl1_adj = new Map()
 
     this.updateMaps()
+
+    //miniMap
+    this.miniMapOn = true
+
+    this.miniMap = this.add.graphics(0,0)
+    this.miniMap.fillStyle(0x0000aa, 1.0)
+    this.miniMap.fillRect(10, 10, 128*2, 128*2)
+    this.miniMap.setDepth(max_z)
+    this.miniMap.setScrollFactor(0)
+    this.drawMiniMap()
+    this.miniDot = this.add.rectangle(10,10,6,6,0xFFFFFF)
+    this.miniDot.setDepth(max_z)
+    this.miniDot.setScrollFactor(0)
+    this.miniDot.setOrigin(0)
+    this.keyInput.m.on(`down`, ()=> {this.toggleMiniMap()} )
 	}
 
   update()
@@ -145,7 +160,7 @@ export default class GameScene extends Phaser.Scene
 	}
 
   step_adj() {
-      let player_center = this.player.getCenter()
+    let player_center = this.player.getCenter()
     let delta = new Phaser.Math.Vector2(0,0);
       /*console.log("player center:")
       console.info(player_center)
@@ -166,10 +181,17 @@ export default class GameScene extends Phaser.Scene
       delta.y*this.area_rect.height+this.area_rect.y
     )
     this.updateMaps(delta)
+    worker.postMessage(
+      {job:"get_lvl2xy"}
+    ).then(
+      response => {
+        this.miniDot.x = response.x*2+10
+        this.miniDot.y = response.y*2+10
+      }
+    )
   }
 
   updateMaps(delta) {
-
     worker.postMessage(
       {job:"make_map", move: delta}
     ).then(
@@ -229,6 +251,7 @@ export default class GameScene extends Phaser.Scene
     this.keyInput.a = this.input.keyboard.addKey('A')
     this.keyInput.s = this.input.keyboard.addKey('S')
     this.keyInput.d = this.input.keyboard.addKey('D')
+    this.keyInput.m = this.input.keyboard.addKey('M')
     this.joyStickBase = this.add.circle(0, 0, 100, 0x888888)
     this.joyStickBase.setDepth(max_z)
     this.joyStickThumb = this.add.circle(0, 0, 50, 0xcccccc)
@@ -248,4 +271,30 @@ export default class GameScene extends Phaser.Scene
     }, this)
   }
 
+  toggleMiniMap() {
+    this.miniMapOn = !this.miniMapOn
+    if (this.miniMapOn) { this.miniMap.visible = this.miniDot.visible = true }
+    else { this.miniMap.visible = this.miniDot.visible = false }
+  }
+  drawMiniMap(data) {
+    worker.postMessage(
+      {job:"get_lvl2"}
+    ).then(
+      (response) => {
+        console.log(response)
+        for (let x=0; x<128; x++) {
+          for (let y=0; y<128; y++) {
+            if (response[x][y] === 4) {
+              this.miniMap.fillStyle(0xAAAA00, 1.0)
+              this.miniMap.fillRect(10+x*2, 10+y*2, 2, 2)
+            }
+          }
+        }
+      }
+    ).catch(
+      function (err) {
+        console.error(`error response: ${err.message}`)
+      }
+    )
+  }
 }
