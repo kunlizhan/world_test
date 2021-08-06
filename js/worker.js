@@ -110,7 +110,7 @@ class PseudoRand
 
 const Vec2 = Phaser.Math.Vector2 //shorthand
 
-const area_size = 128
+const AREA_SIZE = 128
 var lvl3_xy = new Vec2(81,108) // Tingi on the lvl 3 map
 var lvl2_xy = new Vec2(39,95) // start location on lvl 2 map
 //const myScene = new Phaser.Scene(null)
@@ -121,7 +121,7 @@ var lvl1_adj = new Map()
 fetch(`../assets/maps/lvl3_arr.json`)
   .then(response => response.json())
   .then(data => {
-    let arr = unflatten({arr:data, row_len:area_size})
+    let arr = unflatten({arr:data, row_len:AREA_SIZE})
     arr = transpose(arr)
     lvl3_adj.set("0_0", arr)
   });
@@ -129,7 +129,7 @@ fetch(`../assets/maps/lvl3_arr.json`)
 fetch(`../assets/maps/my_lvl3_81_108.json`)
   .then(response => response.json())
   .then(data => {
-    let arr = unflatten({arr:data, row_len:area_size})
+    let arr = unflatten({arr:data, row_len:AREA_SIZE})
     arr = transpose(arr)
     lvl2_adj.set("0_0", arr)
   });
@@ -184,9 +184,9 @@ function doJob(msg) {
             id.add(key)
             let parent = new Vec2(lvl3_xy)
             if (id.x < 0) { parent.x -= 1 }
-            if (id.x >= area_size) { parent.x += 1 }
+            if (id.x >= AREA_SIZE) { parent.x += 1 }
             if (id.y < 0) { parent.y -= 1 }
-            if (id.y >= area_size) { parent.y += 1 }
+            if (id.y >= AREA_SIZE) { parent.y += 1 }
 
             let area_obj = new Area(parent, id)
             area_obj.genArr({lvl:1})
@@ -222,16 +222,9 @@ class Area extends Map
     g_vec.add(id)
     this.set("g_vec", g_vec)
     //console.log(this.get("g_vec"))
-    let arr = []
-		for (var i = 0; i < area_size; i++) {
-			let x = [];
-			for (var j = 0; j < area_size; j++) {
-				x.push(0);
-			}
-			arr.push(x);
-		}
-    this.set("arr", arr)
+    this.set("arr", fill_all(0))
 	}
+
   terr_from_index(ind) { //returns the smallest prime that is a factor of ind, this represents terrain type, which combine by multiplication
     if (ind===Tile2.SPECIAL) {return ind}
     const set = [Tile2.DIRT, Tile2.WATER, Tile2.CITY, 11,13,17,19]
@@ -252,7 +245,6 @@ class Area extends Map
         types_ind.has(value)? types_ind.get(value).push(key) : types_ind.set(value, [key])
       }
     )
-
     function key_of_longest(map) {
       let key_of = undefined
       let record = []
@@ -266,29 +258,40 @@ class Area extends Map
       )
       return key_of
     }
-
-    let longest = types_ind.get(key_of_longest(types_ind))
+    let most_common_type = key_of_longest(types_ind)
+    let common_quads = types_ind.get(most_common_type)
     switch (types_ind.size) {
-      case 1: return {trans: "no transition"}
+      case 1: return {trans: "none"}
       case 4: return {trans: "4 corners"}
       case 2:
-        if (longest.length == 3) {
+        if (common_quads.length == 3) {
           let corner = null
           types_ind.forEach( (value)=> {if (value.length===1) {corner = value[0]} } )
-          return {trans: "1 corner", corner: corner}
+          return {trans: "1 corner", quadrant: corner}
         }
         else {
-          let diff = Math.abs(longest[0]-longest[1])
+          let diff = Math.abs(common_quads[0]-common_quads[1]) //only diagonal corners, quadrants (1,3) or (2,4) will have difference of exactly 2
           if (diff == 2) {return {trans: "2 and 2 corners"}}
           else {
-            let orientation = null
-
-            return {trans: "half and half"}
-          } //only diagonal corners, quadrants (1,3) or (2,4) will have difference of exactly 2
+            let horizontal = ( quadrant_ind.get(1) === quadrant_ind.get(2) )
+            return {trans: "half and half", horizontal: horizontal}
+          }
         }
       case 3:
-        let diff = Math.abs(longest[0]-longest[1])
-        if (diff == 2) {return {trans: "2 and 2 corners"}} else {return {trans: "half and 2 corners"}}
+        let diff = Math.abs(common_quads[0]-common_quads[1])
+        if (diff == 2) {return {trans: "2 and 2 corners"}}
+        else {
+          let orientation = null
+          if (common_quads.includes(1)) {
+            if (common_quads.includes(2)) { orientation="top" }
+            else { orientation="right" }
+          }
+          else if (common_quads.includes(3)) {
+            if (common_quads.includes(4)) { orientation="bottom" }
+            else { orientation="left" }
+          }
+          return {trans: "half and 2 corners", half: orientation}
+        }
     }
   }
 
@@ -297,45 +300,30 @@ class Area extends Map
       throw new Error("lvl2 not ready")
     }
     let vec_id = str_to_vec(this.get("id"))
-    let types = new Map() //key is tile type, value is one or more quadrants that has that type
-    function add_type(quadrant) {
-      let x = (quadrant==1 || quadrant==4)? 0 : -1
-      let y = (quadrant==1 || quadrant==2)? -1 : 0
-      let ind = lvl2_adj.get("0_0")[vec_id.x+x][vec_id.y+y]
-      let type = Area.prototype.terr_from_index(ind)
-      types.has(type)? types.get(type).push(quadrant) : types.set(type, [quadrant])
-    }
-    for (let n=1; n<=4; n++) { add_type(n) }
-    //console.log(types)
-    //let trans = this.get_trans_type(types)
-    //console.log(trans)
 
     function make_quadrant_ind(parent, vec_id) {
       let quadrant_ind = new Map()
-      quadrant_ind.set(1, parent[[vec_id.x][vec_id.y-1]])
-      quadrant_ind.set(2, parent[[vec_id.x-1][vec_id.y]])
-      quadrant_ind.set(3, parent[[vec_id.x-1][vec_id.y-1]])
-      quadrant_ind.set(4, parent[[vec_id.x][vec_id.y]])
+      quadrant_ind.set(1, parent[vec_id.x][vec_id.y-1])
+      quadrant_ind.set(2, parent[vec_id.x-1][vec_id.y])
+      quadrant_ind.set(3, parent[vec_id.x-1][vec_id.y-1])
+      quadrant_ind.set(4, parent[vec_id.x][vec_id.y])
       return quadrant_ind
     }
     let trans = this.get_trans_type( make_quadrant_ind(lvl2_adj.get("0_0"), vec_id) )
+    console.log(trans)
 
     let type = lvl2_adj.get("0_0")[vec_id.x][vec_id.y]
     let ps = new PseudoRand(this.get("g_vec"))
     let arr = this.get("arr")
+    if (trans.trans === `none`) {
+      if (type === Tile2.DIRT) {arr = make_desert(arr, this.get("g_vec"))}
+    }
   	switch(type) {
   		case Tile2.DIRT:
         arr = make_desert(arr, this.get("g_vec"))
   			break
       case Tile2.WATER:
-        arr = []
-        for (var i = 0; i < area_size; i++) {
-          let x = [];
-          for (var j = 0; j < area_size; j++) {
-            x.push(13);
-          }
-          arr.push(x);
-        }
+        arr = fill_all(Tile1.WATER)
         break
       case 6:
         arr = make_desert(arr, this.get("g_vec"))
@@ -345,7 +333,17 @@ class Area extends Map
     this.set("arr", arr)
   }
 }
-
+function fill_all(tile) {
+  let arr = []
+  for (var i = 0; i < AREA_SIZE; i++) {
+    let x = [];
+    for (var j = 0; j < AREA_SIZE; j++) {
+      x.push(tile);
+    }
+    arr.push(x);
+  }
+  return arr
+}
 function make_path(area_arr, ps) {
   ps.set_bit_len(1)
   switch (ps.next_bits()) {
