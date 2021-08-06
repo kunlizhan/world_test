@@ -18,7 +18,7 @@ function rand_walk_ortho({area_arr, pseudorand, tile_index, fill}) { //draw hori
   /*array.forEach(function(item, index){
     array[index][target_y] = -1
   })*/
-
+  //c is for current, the current tile in question
   let c_x = 0
   let c_y = target_y
 

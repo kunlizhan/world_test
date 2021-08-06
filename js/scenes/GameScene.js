@@ -3,6 +3,7 @@ const walk_speed = 400
 const map_px = 128*16 //tiles * tile px size
 const tile_size = 16
 const max_z = 16777271
+
 var scene = undefined
 var camera = undefined
 var areas = [
@@ -67,16 +68,28 @@ export default class GameScene extends Phaser.Scene
     this.miniMapOn = true
 
     this.miniMap = this.add.graphics(0,0)
-    this.miniMap.fillStyle(0x0000aa, 1.0)
+    this.miniMap.fillStyle(0xccaa88, 1.0)
     this.miniMap.fillRect(10, 10, 128*2, 128*2)
     this.miniMap.setDepth(max_z)
     this.miniMap.setScrollFactor(0)
     this.drawMiniMap()
-    this.miniDot = this.add.rectangle(10,10,6,6,0xFFFFFF)
+    this.keyInput.m.on(`down`, ()=> {this.toggleMiniMap()} )
+    this.miniDot = this.add.rectangle(10,10,6,6,0xFFFFFF,0)
+    this.miniDot.setStrokeStyle(2, 0x000000)
     this.miniDot.setDepth(max_z)
     this.miniDot.setScrollFactor(0)
     this.miniDot.setOrigin(0)
-    this.keyInput.m.on(`down`, ()=> {this.toggleMiniMap()} )
+    this.timerMiniDot = scene.time.addEvent({
+      delay: 500,                // ms
+      callback: () => {
+        if (this.miniMap.visible) {
+        this.miniDot.visible = !this.miniDot.visible
+        }
+      },
+      //args: [],
+      //callbackScope: thisArg,
+      loop: true
+    });
 	}
 
   update()
@@ -181,14 +194,7 @@ export default class GameScene extends Phaser.Scene
       delta.y*this.area_rect.height+this.area_rect.y
     )
     this.updateMaps(delta)
-    worker.postMessage(
-      {job:"get_lvl2xy"}
-    ).then(
-      response => {
-        this.miniDot.x = response.x*2+10
-        this.miniDot.y = response.y*2+10
-      }
-    )
+
   }
 
   updateMaps(delta) {
@@ -220,6 +226,15 @@ export default class GameScene extends Phaser.Scene
     ).catch(
       function (err) {
         console.error(`error response: ${err.message}`)
+      }
+    )
+
+    worker.postMessage(
+      {job:"get_lvl2xy"}
+    ).then(
+      response => {
+        this.miniDot.x = response.x*2+8
+        this.miniDot.y = response.y*2+8
       }
     )
   }
@@ -281,11 +296,10 @@ export default class GameScene extends Phaser.Scene
       {job:"get_lvl2"}
     ).then(
       (response) => {
-        console.log(response)
         for (let x=0; x<128; x++) {
           for (let y=0; y<128; y++) {
-            if (response[x][y] === 4) {
-              this.miniMap.fillStyle(0xAAAA00, 1.0)
+            if (response[x][y] === Tile2.WATER) {
+              this.miniMap.fillStyle(0x66aacc, 1.0)
               this.miniMap.fillRect(10+x*2, 10+y*2, 2, 2)
             }
           }

@@ -3,6 +3,7 @@ importScripts('https://cdn.jsdelivr.net/npm/phaser@3.53.1/dist/phaser.min.js')
 importScripts('dep/sjcl.js')
 importScripts('dep/perlin.js')
 importScripts('area_algos_copy.js')
+importScripts('t_type.js')
 
 //custom_maths start
 const _90dg_in_rad = 1.570796
@@ -37,7 +38,7 @@ function unflatten({arr, row_len, col_len=row_len}) {
     let col = 0
     while (col < col_len) {
       //console.log(col)
-      row_arr[col] = arr[col_len*row+col]
+      row_arr[col] = arr[col_len*row+col] -1 //compensate for Tiled exporting with +1
       col++
     }
     new_m[row] = row_arr
@@ -282,7 +283,7 @@ class Area extends Map
     function add_type(quadrant) {
       let x = (quadrant==1 || quadrant==4)? 0 : -1
       let y = (quadrant==1 || quadrant==2)? -1 : 0
-      let ind = lvl2_adj.get("0_0")[vec_id.x+x][vec_id.y+y]-1
+      let ind = lvl2_adj.get("0_0")[vec_id.x+x][vec_id.y+y]
       let type = Area.prototype.terr_from_index(ind)
       types.has(type)? types.get(type).push(quadrant) : types.set(type, [quadrant])
     }
@@ -291,14 +292,14 @@ class Area extends Map
     let trans = this.get_trans_type(types)
     //console.log(trans)
 
-    let type = lvl2_adj.get("0_0")[vec_id.x][vec_id.y]-1
-    let ps = new PseudoRand(this.get("id"))
+    let type = lvl2_adj.get("0_0")[vec_id.x][vec_id.y]
+    let ps = new PseudoRand(this.get("g_vec"))
     let arr = this.get("arr")
   	switch(type) {
-  		case 3:
+  		case Tile2.DIRT:
         arr = make_desert(arr, this.get("g_vec"))
   			break
-      case 5:
+      case Tile2.WATER:
         arr = []
         for (var i = 0; i < area_size; i++) {
           let x = [];
@@ -321,13 +322,13 @@ function make_path(area_arr, ps) {
   ps.set_bit_len(1)
   switch (ps.next_bits()) {
     case 0:
-      area_arr = rand_walk_ortho({area_arr:area_arr, pseudorand:ps, tile_index:2, fill: 13})
+      area_arr = rand_walk_ortho({area_arr:area_arr, pseudorand:ps, tile_index:Tile1.DIRT, fill: Tile1.WATER})
       if (ps.next_bits() == 1) {
         //area_arr = matrix_rot_R(area_arr)
       }
       break
     case 1:
-      area_arr = rand_walk_diag({area_arr:area_arr, pseudorand:ps, tile_index:2})
+      area_arr = rand_walk_diag({area_arr:area_arr, pseudorand:ps, tile_index: Tile1.DIRT})
       ps.set_bit_len(2)
       /*switch (ps.next_bits()) {
         case 0:
