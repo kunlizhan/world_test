@@ -233,11 +233,11 @@ class Area extends Map
     this.set("arr", arr)
 	}
   terr_from_index(ind) { //returns the smallest prime that is a factor of ind, this represents terrain type, which combine by multiplication
-    if (ind===1) {return ind}
-    const set = [3,5,7,11,13,17,19]
-    for (let p of set){
-      if (ind%p === 0) {
-        return p
+    if (ind===Tile2.SPECIAL) {return ind}
+    const set = [Tile2.DIRT, Tile2.WATER, Tile2.CITY, 11,13,17,19]
+    for (let prime of set){
+      if (ind%prime === 0) {
+        return prime
       }
     }
     throw new Error("no terrain type for ind: "+ind)
@@ -245,32 +245,50 @@ class Area extends Map
   path_from_index(ind) {
     return (ind%2===0)? true : false
   }
-  get_trans_type(types){
-    function key_of_longest() {
+  get_trans_type(quadrant_ind){
+    let types_ind = new Map()
+    quadrant_ind.forEach(
+      (value, key)=>{
+        types_ind.has(value)? types_ind.get(value).push(key) : types_ind.set(value, [key])
+      }
+    )
+
+    function key_of_longest(map) {
       let key_of = undefined
       let record = []
-      for (let [key, value] of types) {
-        if (value.length > record.length) {
-          key_of = key
-          record = value
+      map.forEach(
+        (value, key)=>{
+          if (value.length > record.length) {
+            key_of = key
+            record = value
+          }
         }
-      }
+      )
       return key_of
     }
 
-    let longest = types.get(key_of_longest())
-    switch (types.size) {
-      case 1: return "no transition"
-      case 4: return "4 corners"
+    let longest = types_ind.get(key_of_longest(types_ind))
+    switch (types_ind.size) {
+      case 1: return {trans: "no transition"}
+      case 4: return {trans: "4 corners"}
       case 2:
-        if (longest.length == 3) { return "1 corner" }
+        if (longest.length == 3) {
+          let corner = null
+          types_ind.forEach( (value)=> {if (value.length===1) {corner = value[0]} } )
+          return {trans: "1 corner", corner: corner}
+        }
         else {
           let diff = Math.abs(longest[0]-longest[1])
-          if (diff == 2) {return "2 and 2 corners"} else {return "half and half"} //only diagonal corners, quadrants (1,3) or (2,4) will have difference of exactly 2
+          if (diff == 2) {return {trans: "2 and 2 corners"}}
+          else {
+            let orientation = null
+
+            return {trans: "half and half"}
+          } //only diagonal corners, quadrants (1,3) or (2,4) will have difference of exactly 2
         }
       case 3:
         let diff = Math.abs(longest[0]-longest[1])
-        if (diff == 2) {return "2 and 2 corners"} else {return "half and 2 corners"}
+        if (diff == 2) {return {trans: "2 and 2 corners"}} else {return {trans: "half and 2 corners"}}
     }
   }
 
@@ -289,8 +307,18 @@ class Area extends Map
     }
     for (let n=1; n<=4; n++) { add_type(n) }
     //console.log(types)
-    let trans = this.get_trans_type(types)
+    //let trans = this.get_trans_type(types)
     //console.log(trans)
+
+    function make_quadrant_ind(parent, vec_id) {
+      let quadrant_ind = new Map()
+      quadrant_ind.set(1, parent[[vec_id.x][vec_id.y-1]])
+      quadrant_ind.set(2, parent[[vec_id.x-1][vec_id.y]])
+      quadrant_ind.set(3, parent[[vec_id.x-1][vec_id.y-1]])
+      quadrant_ind.set(4, parent[[vec_id.x][vec_id.y]])
+      return quadrant_ind
+    }
+    let trans = this.get_trans_type( make_quadrant_ind(lvl2_adj.get("0_0"), vec_id) )
 
     let type = lvl2_adj.get("0_0")[vec_id.x][vec_id.y]
     let ps = new PseudoRand(this.get("g_vec"))
