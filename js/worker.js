@@ -267,7 +267,7 @@ class Area extends Map
         if (common_quads.length == 3) {
           let corner = null
           types_ind.forEach( (value)=> {if (value.length===1) {corner = value[0]} } )
-          return {trans: "1 corner", quadrant: corner}
+          return {trans: "1 corner", unique_quadrant: corner, common_type: most_common_type }
         }
         else {
           let diff = Math.abs(common_quads[0]-common_quads[1]) //only diagonal corners, quadrants (1,3) or (2,4) will have difference of exactly 2
@@ -279,7 +279,7 @@ class Area extends Map
         }
       case 3:
         let diff = Math.abs(common_quads[0]-common_quads[1])
-        if (diff == 2) {return {trans: "2 and 2 corners"}}
+        if (diff == 2) {return {trans: "3 types no adj"}}
         else {
           let orientation = null
           if (common_quads.includes(1)) {
@@ -290,7 +290,7 @@ class Area extends Map
             if (common_quads.includes(4)) { orientation="bottom" }
             else { orientation="left" }
           }
-          return {trans: "half and 2 corners", half: orientation}
+          return {trans: "3 types yes adj", half: orientation}
         }
     }
   }
@@ -309,12 +309,41 @@ class Area extends Map
       quadrant_ind.set(4, parent[vec_id.x][vec_id.y])
       return quadrant_ind
     }
-    let trans = this.get_trans_type( make_quadrant_ind(lvl2_adj.get("0_0"), vec_id) )
+    let quadrant_ind = make_quadrant_ind(lvl2_adj.get("0_0"), vec_id)
+    let trans = this.get_trans_type(quadrant_ind)
     console.log(trans)
+    let arr = this.get("arr")
+    let ps = new PseudoRand(this.get("g_vec"))
+
+    switch (trans.trans) {
+      case `none`: {
+        let type = quadrant_ind.get(4)
+        arr = fill_all(base_tile1_from(type))
+      } break
+      case `4 corners`: {
+
+      } break
+      case `1 corner`: {
+        arr = fill_all(base_tile1_from(trans.common_type))
+        let type = quadrant_ind.get(trans.unique_quadrant)
+        arr = rand_walk_ortho({area_arr: arr, pseudorand: ps, tile_index: Tile1.PATH, fill: base_tile1_from(type)})
+      } break
+      case `2 and 2 corners`: {
+
+      } break
+      case `half and half`: {
+
+      } break
+      case `3 types no adj`: {
+
+      } break
+      case `3 types yes adj`: {
+
+      }
+    }
+    this.set("arr", arr)
 
     let type = lvl2_adj.get("0_0")[vec_id.x][vec_id.y]
-    let ps = new PseudoRand(this.get("g_vec"))
-    let arr = this.get("arr")
     if (trans.trans === `none`) {
       if (type === Tile2.DIRT) {arr = make_desert(arr, this.get("g_vec"))}
     }
@@ -330,7 +359,7 @@ class Area extends Map
         arr = make_path(arr, ps)
         break
   	}
-    this.set("arr", arr)
+    //this.set("arr", arr)
   }
 }
 function fill_all(tile) {
