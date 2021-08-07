@@ -1,5 +1,9 @@
-//PseudoRand
-class PseudoRand
+function pad(str, digits) {
+  while (str.length < digits) {str = "0" + str;}
+  return str;
+}
+
+export default class PseudoRand
 {
   constructor(seed) {
     this.seed = seed
@@ -38,7 +42,7 @@ class PseudoRand
     //console.log("this.str : "+this.str )
     let chars = this.str.slice(-this.chars_per_n)
     chars = parseInt(chars, this.m_base)
-    chars = chars.toString(2).padStart(this.bits_per_chars, `0`)
+    chars = pad(chars.toString(2), this.bits_per_chars)
     this.bits = chars+this.bits
     this.str = this.str.slice(0, -this.chars_per_n)
   }
@@ -51,4 +55,3 @@ class PseudoRand
   }
 
 }
-//PseudoRand end

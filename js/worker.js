@@ -2,118 +2,16 @@ importScripts('dep/promise-worker.register.js')
 importScripts('https://cdn.jsdelivr.net/npm/phaser@3.53.1/dist/phaser.min.js')
 importScripts('dep/sjcl.js')
 importScripts('dep/perlin.js')
-importScripts('area_algos_copy.js')
+importScripts('area_algos.js')
 importScripts('t_type.js')
-
-//custom_maths start
-const _90dg_in_rad = 1.570796
-function vec_to_str(vec) { return vec.x.toString()+"_"+vec.y.toString() }
-function rand_int_before(int) { return Math.floor(Math.random()*int) }
-function rand_rot(interval) {	return rand_int_before(4)*_90dg_in_rad*interval }
-function transpose(m) {
-  let new_m = []
-  let row = 0
-  while (row < m[0].length) {
-    let row_arr = []
-    for (let col in m) {
-      //console.log(col)
-      row_arr[col] = m[col][row]
-    }
-    new_m[row] = row_arr
-    row++
-  }
-  //console.log(new_m)
-	return new_m
-}
-function matrix_rot_R(m) {//rotates a [col][row] matrix by a quarter turn clockwise, if [row][col] this is a ccw turn instead
-	for (let col of m) { col.reverse() }
-	m = transpose(m)
-	return m
-}
-function unflatten({arr, row_len, col_len=row_len}) {
-  let new_m = []
-  let row = 0
-  while (row < row_len) {
-    let row_arr = []
-    let col = 0
-    while (col < col_len) {
-      //console.log(col)
-      row_arr[col] = arr[col_len*row+col] -1 //compensate for Tiled exporting with +1
-      col++
-    }
-    new_m[row] = row_arr
-    row++
-  }
-  //console.log(new_m)
-	return new_m
-}
-//custom_maths end
-function str_to_vec(str) {
-  let arr = str.split("_")
-  let vec = new Phaser.Math.Vector2(parseInt(arr[0]), parseInt(arr[1]))
-  return vec
-}
-//PseudoRand
-class PseudoRand
-{
-  constructor(seed) {
-    this.seed = seed
-    this.m_len= 64
-    this.m_base = 16
-  	this.m_base_bits = (this.m_base-1).toString(2).length
-    this.set_bit_len(2)
-
-    this.bits = ""
-    let str = sjcl.hash.sha256.hash(this.seed) //makes new str
-    str = sjcl.codec.hex.fromBits(str)
-    this.str = str
-    //console.log("this.str : "+this.str )
-	}
-
-  set_bit_len(b) {
-    this.n_bits = b
-  	this.chars_per_n = Math.ceil(this.n_bits/this.m_base_bits)
-    this.bits_per_chars = this.m_base_bits*this.chars_per_n
-  }
-
-  next_bits() {
-    if (this.bits.length < this.n_bits) { this.next_chars() }
-    let taken = this.bits.slice(-this.n_bits)
-    //console.log("this.bits: "+this.bits)
-  	//console.log("taken: "+taken)
-  	this.bits = this.bits.slice(0, -this.n_bits)
-
-  	let result = parseInt(taken, 2)
-    //console.log("result: "+result)
-    return result
-  }
-
-  next_chars() {
-    if (this.str.length < this.m_len+this.chars_per_n) { this.next_str() }
-    //console.log("this.str : "+this.str )
-    let chars = this.str.slice(-this.chars_per_n)
-    chars = parseInt(chars, this.m_base)
-    chars = chars.toString(2).padStart(this.bits_per_chars, `0`)
-    this.bits = chars+this.bits
-    this.str = this.str.slice(0, -this.chars_per_n)
-  }
-
-  next_str() {
-    let new_seed = this.str.slice(0, this.m_len)
-    let next = sjcl.hash.sha256.hash(new_seed)
-    next = sjcl.codec.hex.fromBits(next)
-    this.str = next+this.str
-  }
-
-}
-//PseudoRand end
+importScripts(`custom_maths.js`)
+importScripts(`PseudoRand.js`)
 
 const Vec2 = Phaser.Math.Vector2 //shorthand
 
 const AREA_SIZE = 128
 var lvl3_xy = new Vec2(81,108) // Tingi on the lvl 3 map
 var lvl2_xy = new Vec2(39,95) // start location on lvl 2 map
-//const myScene = new Phaser.Scene(null)
 var lvl3_adj = new Map()
 var lvl2_adj = new Map()
 var lvl1_adj = new Map()
@@ -224,17 +122,6 @@ class Area extends Map
     //console.log(this.get("g_vec"))
     this.set("arr", fill_all(0))
 	}
-
-  terr_from_index(ind) { //returns the smallest prime that is a factor of ind, this represents terrain type, which combine by multiplication
-    if (ind===Tile2.SPECIAL) {return ind}
-    const set = [Tile2.DIRT, Tile2.WATER, Tile2.CITY, 11,13,17,19]
-    for (let prime of set){
-      if (ind%prime === 0) {
-        return prime
-      }
-    }
-    throw new Error("no terrain type for ind: "+ind)
-  }
   path_from_index(ind) {
     return (ind%2===0)? true : false
   }
@@ -290,7 +177,7 @@ class Area extends Map
             if (common_quads.includes(4)) { orientation="bottom" }
             else { orientation="left" }
           }
-          return {trans: "3 types yes adj", half: orientation}
+          return {trans: "3 types with adj", half: orientation}
         }
     }
   }
@@ -324,42 +211,37 @@ class Area extends Map
 
       } break
       case `1 corner`: {
-        arr = fill_all(base_tile1_from(trans.common_type))
-        let type = quadrant_ind.get(trans.unique_quadrant)
-        arr = rand_walk_ortho({area_arr: arr, pseudorand: ps, tile_index: Tile1.PATH, fill: base_tile1_from(type)})
+        // arr = fill_all(base_tile1_from(trans.common_type))
+        // let type = quadrant_ind.get(trans.unique_quadrant)
+        // arr = rand_walk_ortho({
+        //   area_arr: arr,
+        //   pseudorand: ps,
+        //   quad: trans.unique_quadrant,
+        //   tile_index: Tile1.PATH,
+        //   fill: base_tile1_from(type) })
       } break
       case `2 and 2 corners`: {
-
+        arr = fill_all(14)
       } break
       case `half and half`: {
-
+        arr = fill_all(base_tile1_from(quadrant_ind.get(4)))
+        let type = quadrant_ind.get(2)
+        arr = rand_walk_ortho({
+          area_arr: arr,
+          pseudorand: ps,
+          horizontal: trans.horizontal,
+          tile_index: Tile1.PATH,
+          fill: base_tile1_from(type) })
       } break
       case `3 types no adj`: {
-
+        arr = fill_all(14)
       } break
-      case `3 types yes adj`: {
-
+      case `3 types with adj`: {
+        arr = fill_all(1)
       }
     }
+    //end switch
     this.set("arr", arr)
-
-    let type = lvl2_adj.get("0_0")[vec_id.x][vec_id.y]
-    if (trans.trans === `none`) {
-      if (type === Tile2.DIRT) {arr = make_desert(arr, this.get("g_vec"))}
-    }
-  	switch(type) {
-  		case Tile2.DIRT:
-        arr = make_desert(arr, this.get("g_vec"))
-  			break
-      case Tile2.WATER:
-        arr = fill_all(Tile1.WATER)
-        break
-      case 6:
-        arr = make_desert(arr, this.get("g_vec"))
-        arr = make_path(arr, ps)
-        break
-  	}
-    //this.set("arr", arr)
   }
 }
 function fill_all(tile) {

@@ -1,26 +1,27 @@
-var array = []
-var area_size = 0
-var use_tile = -1
-var c_x = 0
-var c_y = 0
-function set_c_tile_ind() {
-  //console.log("drawing path: "+c_x+", "+c_y)
-  array[c_x][c_y] = use_tile
-}
-
-export function rand_walk_ortho({area_arr, pseudorand, tile_index}) {
-  array = area_arr
-  area_size = array.length
-  use_tile = tile_index
+function rand_walk_ortho({area_arr, pseudorand, horizontal, tile_index, fill}) { //draw horizontal, endpoints in top quadrants
+  let array = area_arr
+  let area_size = array.length
+  let use_tile = tile_index
+  let do_fill = (fill==undefined)? false : true
+  //console.log(do_fill)
+  function set_c_tile_ind() {
+    array[c_y][c_x] = use_tile
+    if (do_fill) {
+      for (let y=c_y-1; y >= 0; y--) {
+        array[y][c_x] = fill
+      }
+    }
+  }
 
   let target_x = area_size-1
   let target_y = Math.floor((area_size-1)/2)
   /*array.forEach(function(item, index){
     array[index][target_y] = -1
   })*/
+  //c is for current, the current tile in question
+  let c_x = 0
+  let c_y = target_y
 
-  c_x = 0
-  c_y = target_y
   let total_steps_x = Math.abs(c_x - target_x)
 
   let max_drift = Math.floor((area_size-1)/4)
@@ -86,18 +87,19 @@ export function rand_walk_ortho({area_arr, pseudorand, tile_index}) {
       break
     }
   }
-  //array[0][target_y+1] = 2
-  //array[target_x][target_y+1] = 2
-  //console.error("done path")
+  if (!horizontal) { array = matrix_rot_R(array) }
   return array
 }
-export function rand_walk_diag({area_arr, pseudorand, tile_index}) {
-  array = area_arr
-  area_size = array.length
-  use_tile = tile_index
-
+function rand_walk_diag({area_arr, pseudorand, quad, tile_index, fill}) { // draw from left to top, in left top quadrant
+  let array = area_arr
+  let area_size = array.length
+  let use_tile = tile_index
   c_x = 0
   c_y = Math.floor((area_size-1)/2)
+  function set_c_tile_ind() {
+    array[c_y][c_x] = use_tile
+  }
+
   let target_x = Math.floor((area_size-1)/2)
   let target_y = 0
 

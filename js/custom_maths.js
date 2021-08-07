@@ -1,8 +1,9 @@
-export const _90dg_in_rad = 1.570796
-export function vec_to_str(vec) { return vec.x.toString()+"_"+vec.y.toString() }
-export function rand_int_before(int) { return Math.floor(Math.random()*int) }
-export function rand_rot(interval) {	return rand_int_before(4)*_90dg_in_rad*interval }
-export function transpose(m) {
+//custom_maths start
+const _90dg_in_rad = 1.570796
+function vec_to_str(vec) { return vec.x.toString()+"_"+vec.y.toString() }
+function rand_int_before(int) { return Math.floor(Math.random()*int) }
+function rand_rot(interval) {	return rand_int_before(4)*_90dg_in_rad*interval }
+function transpose(m) {
   let new_m = []
   let row = 0
   while (row < m[0].length) {
@@ -17,12 +18,12 @@ export function transpose(m) {
   //console.log(new_m)
 	return new_m
 }
-export function matrix_rot_R(m) {//rotates a [col][row] matrix by a quarter turn clockwise, if [row][col] this is a ccw turn instead
+function matrix_rot_R(m) {//rotates a [col][row] matrix by a quarter turn clockwise, if [row][col] this is a ccw turn instead
 	for (let col of m) { col.reverse() }
 	m = transpose(m)
 	return m
 }
-export function unflatten({arr, row_len, col_len=row_len}) {
+function unflatten({arr, row_len, col_len=row_len}) {
   let new_m = []
   let row = 0
   while (row < row_len) {
@@ -30,7 +31,7 @@ export function unflatten({arr, row_len, col_len=row_len}) {
     let col = 0
     while (col < col_len) {
       //console.log(col)
-      row_arr[col] = arr[col_len*row+col]
+      row_arr[col] = arr[col_len*row+col] -1 //compensate for Tiled exporting with +1
       col++
     }
     new_m[row] = row_arr
@@ -38,4 +39,10 @@ export function unflatten({arr, row_len, col_len=row_len}) {
   }
   //console.log(new_m)
 	return new_m
+}
+//custom_maths end
+function str_to_vec(str) {
+  let arr = str.split("_")
+  let vec = new Phaser.Math.Vector2(parseInt(arr[0]), parseInt(arr[1]))
+  return vec
 }
