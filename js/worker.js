@@ -1,15 +1,15 @@
+const AREA_SIZE = 128
 importScripts('dep/promise-worker.register.js')
 importScripts('https://cdn.jsdelivr.net/npm/phaser@3.53.1/dist/phaser.min.js')
+const Vec2 = Phaser.Math.Vector2 //shorthand
 importScripts('dep/sjcl.js')
 importScripts('dep/perlin.js')
 importScripts('area_algos.js')
 importScripts('t_type.js')
 importScripts(`custom_maths.js`)
 importScripts(`PseudoRand.js`)
+importScripts(`./world_data/static_overwrites.js`)
 
-const Vec2 = Phaser.Math.Vector2 //shorthand
-
-const AREA_SIZE = 128
 var lvl3_xy = new Vec2(81,108) // Tingi on the lvl 3 map
 var lvl2_xy = new Vec2(39,95) // start location on lvl 2 map
 var lvl3_adj = new Map()
@@ -126,6 +126,9 @@ class Area extends Map
     return (ind%2===0)? true : false
   }
   get_trans_type(quadrant_ind){
+    //quadrant_ind = new Map(quadrant_ind)
+    quadrant_ind.forEach( (value, key)=>{quadrant_ind.set(key, base_from_composite(value))} )
+    console.log(quadrant_ind)
     let types_ind = new Map()
     quadrant_ind.forEach(
       (value, key)=>{

@@ -27,7 +27,7 @@ export default class GameScene extends Phaser.Scene
     scene = this
     this.lvl3_xy = new Phaser.Math.Vector2(81,108) // Tingi on the lvl 3 map
     this.lvl2_xy = new Phaser.Math.Vector2(0,0) // start location on lvl 2 map
-    this.lvl1_xy = new Phaser.Math.Vector2(0,0) // start location on lvl 1 map
+    this.lvl1_xy = new Phaser.Math.Vector2(100,100) // start location on lvl 1 map
 	}
 
 	preload()
