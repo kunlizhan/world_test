@@ -128,7 +128,6 @@ class Area extends Map
   get_trans_type(quadrant_ind){
     //quadrant_ind = new Map(quadrant_ind)
     quadrant_ind.forEach( (value, key)=>{quadrant_ind.set(key, base_from_composite(value))} )
-    console.log(quadrant_ind)
     let types_ind = new Map()
     quadrant_ind.forEach(
       (value, key)=>{
@@ -164,7 +163,7 @@ class Area extends Map
           if (diff == 2) {return {trans: "2 and 2 corners"}}
           else {
             let horizontal = ( quadrant_ind.get(1) === quadrant_ind.get(2) )
-            return {trans: "half and half", horizontal: horizontal}
+            return {trans: "half and half", is_horizontal: horizontal}
           }
         }
       case 3:
@@ -194,16 +193,17 @@ class Area extends Map
     function make_quadrant_ind(parent, vec_id) {
       let quadrant_ind = new Map()
       quadrant_ind.set(1, parent[vec_id.x][vec_id.y-1])
-      quadrant_ind.set(2, parent[vec_id.x-1][vec_id.y])
-      quadrant_ind.set(3, parent[vec_id.x-1][vec_id.y-1])
+      quadrant_ind.set(2, parent[vec_id.x-1][vec_id.y-1])
+      quadrant_ind.set(3, parent[vec_id.x-1][vec_id.y])
       quadrant_ind.set(4, parent[vec_id.x][vec_id.y])
       return quadrant_ind
     }
     let quadrant_ind = make_quadrant_ind(lvl2_adj.get("0_0"), vec_id)
     let trans = this.get_trans_type(quadrant_ind)
-    console.log(trans)
     let arr = this.get("arr")
     let ps = new PseudoRand(this.get("g_vec"))
+    let unfinished = 4 //this is placeholder tile
+    let of_interest = 8
 
     switch (trans.trans) {
       case `none`: {
@@ -211,7 +211,7 @@ class Area extends Map
         arr = fill_all(base_tile1_from(type))
       } break
       case `4 corners`: {
-
+        arr = fill_all(unfinished)
       } break
       case `1 corner`: {
         // arr = fill_all(base_tile1_from(trans.common_type))
@@ -222,9 +222,10 @@ class Area extends Map
         //   quad: trans.unique_quadrant,
         //   tile_index: Tile1.PATH,
         //   fill: base_tile1_from(type) })
+        arr = fill_all(of_interest)
       } break
       case `2 and 2 corners`: {
-        arr = fill_all(14)
+        arr = fill_all(unfinished)
       } break
       case `half and half`: {
         arr = fill_all(base_tile1_from(quadrant_ind.get(4)))
@@ -232,15 +233,15 @@ class Area extends Map
         arr = rand_walk_ortho({
           area_arr: arr,
           pseudorand: ps,
-          horizontal: trans.horizontal,
+          horizontal: trans.is_horizontal,
           tile_index: Tile1.PATH,
           fill: base_tile1_from(type) })
       } break
       case `3 types no adj`: {
-        arr = fill_all(14)
+        arr = fill_all(unfinished)
       } break
       case `3 types with adj`: {
-        arr = fill_all(1)
+        arr = fill_all(unfinished)
       }
     }
     //end switch

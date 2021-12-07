@@ -6,7 +6,9 @@
 const Tile1 = {
   DIRT: 0,
   PATH: 3,
-  WATER: 13
+  ROCK: 12,
+  WATER: 13,
+  GREEN: 14
 }
 const Tile2 = {
   SPECIAL: 1,
