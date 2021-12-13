@@ -18,7 +18,7 @@ function transpose(m) {
   //console.log(new_m)
 	return new_m
 }
-function matrix_rot_R(m) {//rotates a [col][row] matrix by a quarter turn clockwise, if [row][col] this is a ccw turn instead
+function matrix_rot_R(m) {//rotates a [row][col] matrix by a quarter turn clockwise, if [col][row] this is a ccw turn instead
 	for (let col of m) { col.reverse() }
 	m = transpose(m)
 	return m

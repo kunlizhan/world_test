@@ -1,24 +1,24 @@
-function rand_walk_ortho({area_arr, pseudorand, horizontal, tile_index, fill}) { //draw horizontal, endpoints in top quadrants
+const Area_Algos = {}
+
+Area_Algos.paint = function({array, c_y, c_x, use_tile, fill}) {
+  array[c_y][c_x] = use_tile
+  if (!Object.is(fill, undefined)) {
+    for (let y=c_y-1; y >= 0; y--) {
+      array[y][c_x] = fill
+    }
+  }
+}
+
+Area_Algos.rand_walk_ortho = function({area_arr, pseudorand, horizontal, tile_index, fill}) { //draw horizontal, endpoints in top quadrants
   let array = area_arr
   let area_size = array.length
   let use_tile = tile_index
-  let do_fill = (fill==undefined)? false : true
-  //console.log(do_fill)
   function set_c_tile_ind() {
-    array[c_y][c_x] = use_tile
-    if (do_fill) {
-      for (let y=c_y-1; y >= 0; y--) {
-        array[y][c_x] = fill
-      }
-    }
+    Area_Algos.paint({array, c_y, c_x, use_tile, fill})
   }
 
   let target_x = area_size-1
   let target_y = Math.floor((area_size-1)/2)
-  /*array.forEach(function(item, index){
-    array[index][target_y] = -1
-  })*/
-  //c is for current, the current tile in question
   let c_x = 0
   let c_y = target_y
 
@@ -68,10 +68,7 @@ function rand_walk_ortho({area_arr, pseudorand, horizontal, tile_index, fill}) {
         //console.log("drift set to zero: "+(c_y-target_y))
         //use_tile = 8
       }
-      /*if (max_drift == 0) {
-        //console.error("got to zero at"+c_y+","+c_x)
-        array[c_y][c_x] = 12
-      }*/
+
     }
     switch (pseudorand.next_bits()) {
     //to do: add drift correction
@@ -90,14 +87,15 @@ function rand_walk_ortho({area_arr, pseudorand, horizontal, tile_index, fill}) {
   if (!horizontal) { array = matrix_rot_R(array) }
   return array
 }
-function rand_walk_diag({area_arr, pseudorand, quad, tile_index, fill}) { // draw from left to top, in left top quadrant
+
+Area_Algos.rand_walk_diag = function({area_arr, pseudorand, quad, tile_index, fill}) { // draw from left to top, in left top quadrant
   let array = area_arr
   let area_size = array.length
   let use_tile = tile_index
   c_x = 0
   c_y = Math.floor((area_size-1)/2)
   function set_c_tile_ind() {
-    array[c_y][c_x] = use_tile
+    Area_Algos.paint({array, c_y, c_x, use_tile, fill})
   }
 
   let target_x = Math.floor((area_size-1)/2)
@@ -105,8 +103,6 @@ function rand_walk_diag({area_arr, pseudorand, quad, tile_index, fill}) { // dra
 
   let total_steps_x = Math.abs(target_x - c_x)
   let total_steps_y = Math.abs(target_y - c_y)
-  console.log("target_x: "+target_x)
-  console.log("target_y: "+target_y)
 
   pseudorand.set_bit_len(1)
   //use_tile = -1
@@ -162,7 +158,6 @@ function rand_walk_diag({area_arr, pseudorand, quad, tile_index, fill}) { // dra
         set_c_tile_ind()
         step++
       }
-      console.log("step: "+step)
       break
     } else if (c_y == target_y) {
       while (c_x != target_x) {
@@ -170,11 +165,18 @@ function rand_walk_diag({area_arr, pseudorand, quad, tile_index, fill}) { // dra
         set_c_tile_ind()
         step++
       }
-      console.log("step: "+step)
       break
     }
   }
-  //array[0][target_y+1] = 2
-  //array[target_x+1][target_y] = 2
+
+  //apply rotations
+  if (!Object.is(quad, undefined)) {
+    current_quad = 2 //quadrant 2 is where we drew the diagonal from left to top
+    while (current_quad != quad) {
+      array = matrix_rot_R(array)
+      current_quad = (current_quad === 4) ? 1 : current_quad +1 //loops
+      console.log("rotated")
+    }
+  }
   return array
 }

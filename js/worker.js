@@ -4,14 +4,15 @@ importScripts('https://cdn.jsdelivr.net/npm/phaser@3.53.1/dist/phaser.min.js')
 const Vec2 = Phaser.Math.Vector2 //shorthand
 importScripts('dep/sjcl.js')
 importScripts('dep/perlin.js')
+importScripts(`custom_maths.js`)
 importScripts('area_algos.js')
 importScripts('t_type.js')
-importScripts(`custom_maths.js`)
 importScripts(`PseudoRand.js`)
 importScripts(`./world_data/static_overwrites.js`)
 
 var lvl3_xy = new Vec2(81,108) // Tingi on the lvl 3 map
 var lvl2_xy = new Vec2(39,95) // start location on lvl 2 map
+lvl2_xy = new Vec2(46,122)
 var lvl3_adj = new Map()
 var lvl2_adj = new Map()
 var lvl1_adj = new Map()
@@ -214,15 +215,16 @@ class Area extends Map
         arr = fill_all(unfinished)
       } break
       case `1 corner`: {
-        // arr = fill_all(base_tile1_from(trans.common_type))
-        // let type = quadrant_ind.get(trans.unique_quadrant)
-        // arr = rand_walk_ortho({
-        //   area_arr: arr,
-        //   pseudorand: ps,
-        //   quad: trans.unique_quadrant,
-        //   tile_index: Tile1.PATH,
-        //   fill: base_tile1_from(type) })
-        arr = fill_all(of_interest)
+        arr = fill_all(base_tile1_from(trans.common_type))
+        let corner_tile = quadrant_ind.get(trans.unique_quadrant)
+        console.log(trans.unique_quadrant)
+        arr = Area_Algos.rand_walk_diag({
+          area_arr: arr,
+          pseudorand: ps,
+          quad: trans.unique_quadrant,
+          tile_index: Tile1.PATH,
+          fill: base_tile1_from(corner_tile)
+        })
       } break
       case `2 and 2 corners`: {
         arr = fill_all(unfinished)
@@ -230,7 +232,7 @@ class Area extends Map
       case `half and half`: {
         arr = fill_all(base_tile1_from(quadrant_ind.get(4)))
         let type = quadrant_ind.get(2)
-        arr = rand_walk_ortho({
+        arr = Area_Algos.rand_walk_ortho({
           area_arr: arr,
           pseudorand: ps,
           horizontal: trans.is_horizontal,
@@ -263,13 +265,13 @@ function make_path(area_arr, ps) {
   ps.set_bit_len(1)
   switch (ps.next_bits()) {
     case 0:
-      area_arr = rand_walk_ortho({area_arr:area_arr, pseudorand:ps, tile_index:Tile1.DIRT, fill: Tile1.WATER})
+      area_arr = Area_Algos.rand_walk_ortho({area_arr:area_arr, pseudorand:ps, tile_index:Tile1.DIRT, fill: Tile1.WATER})
       if (ps.next_bits() == 1) {
         //area_arr = matrix_rot_R(area_arr)
       }
       break
     case 1:
-      area_arr = rand_walk_diag({area_arr:area_arr, pseudorand:ps, tile_index: Tile1.DIRT})
+      area_arr = Area_Algos.rand_walk_diag({area_arr:area_arr, pseudorand:ps, tile_index: Tile1.DIRT})
       ps.set_bit_len(2)
       /*switch (ps.next_bits()) {
         case 0:
