@@ -41,3 +41,26 @@ function base_from_composite(ind) {//returns the smallest prime that is a factor
   }
   throw new Error("no terrain type for ind: "+ind)
 }
+class TerrainSet extends Array
+{
+  constructor(arg) {
+    super()
+    let map = new Map(arg)
+    map.forEach((value, key) => {
+      let i = value
+      while (i >= 1) {
+        this.push(key)
+        i--
+      }
+    })
+  }
+}
+const TerrainSets = new Map([
+  [Tile2.DIRT, new TerrainSet([
+    [Tile1.DIRT, 15],
+    [11,1],
+    [10,1],
+    [9,2],
+    [8,1]
+  ])]
+])

@@ -1,3 +1,5 @@
+//dependencies: worker.js, perlin, phaser, custom_maths, t_type
+
 const Area_Algos = {}
 
 Area_Algos.paint = function({array, c_y, c_x, use_tile, fill}) {
@@ -175,8 +177,40 @@ Area_Algos.rand_walk_diag = function({area_arr, pseudorand, quad, tile_index, fi
     while (current_quad != quad) {
       array = matrix_rot_R(array)
       current_quad = (current_quad === 4) ? 1 : current_quad +1 //loops
-      console.log("rotated")
     }
   }
   return array
+}
+Area_Algos.perlin_tile = function({L1_gvec, L2tile}) { //returns a level 1 tile number
+  let set = TerrainSets.get(L2tile) //gets an array of tile numbers defined in t_type
+  if (Object.is(set, undefined)) {return base_tile1_from(L2tile)}
+
+  let {x, y} = L1_gvec
+  let scale = 0.05
+  let large = noise.simplex2(x*scale, y*scale)
+  // large = (Math.min(large, 0)+1)
+  large = (large+1)/2
+  let small = noise.simplex2(x*0.5, y*0.5)
+  // small = (Math.min(small, 0)+1)
+  small = (small+1)/2
+  let value = large/2 + small/2// range is 0, 1
+  value = Math.floor(value*set.length)
+  if (set[value] == undefined) {console.log(value)}
+  return set[value]
+}
+Area_Algos.perlin_fill = function({L2vec, L2tile}) {
+  let arr = []
+  let parent = new Vec2(L2vec)
+  parent.scale(128)
+  for (let i = 0; i < AREA_SIZE; i++) {
+    let x = [];
+    for (let j = 0; j < AREA_SIZE; j++) {
+      let L1vec = new Vec2(i,j)
+      let L1_gvec = L1vec.add(parent)
+      let tile = this.perlin_tile({L1_gvec:L1_gvec, L2tile:L2tile})
+      x.push(tile);
+    }
+    arr.push(x);
+  }
+  return arr
 }

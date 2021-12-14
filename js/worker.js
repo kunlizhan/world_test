@@ -12,7 +12,7 @@ importScripts(`./world_data/static_overwrites.js`)
 
 var lvl3_xy = new Vec2(81,108) // Tingi on the lvl 3 map
 var lvl2_xy = new Vec2(39,95) // start location on lvl 2 map
-lvl2_xy = new Vec2(46,122)
+//lvl2_xy = new Vec2(46,122)
 var lvl3_adj = new Map()
 var lvl2_adj = new Map()
 var lvl1_adj = new Map()
@@ -126,7 +126,7 @@ class Area extends Map
   path_from_index(ind) {
     return (ind%2===0)? true : false
   }
-  get_trans_type(quadrant_ind){
+  get_trans_type(quadrant_ind) {
     //quadrant_ind = new Map(quadrant_ind)
     quadrant_ind.forEach( (value, key)=>{quadrant_ind.set(key, base_from_composite(value))} )
     let types_ind = new Map()
@@ -209,7 +209,7 @@ class Area extends Map
     switch (trans.trans) {
       case `none`: {
         let type = quadrant_ind.get(4)
-        arr = fill_all(base_tile1_from(type))
+        arr = Area_Algos.perlin_fill({L2vec:this.get(`g_vec`), L2tile:type})
       } break
       case `4 corners`: {
         arr = fill_all(unfinished)
@@ -217,7 +217,6 @@ class Area extends Map
       case `1 corner`: {
         arr = fill_all(base_tile1_from(trans.common_type))
         let corner_tile = quadrant_ind.get(trans.unique_quadrant)
-        console.log(trans.unique_quadrant)
         arr = Area_Algos.rand_walk_diag({
           area_arr: arr,
           pseudorand: ps,
