@@ -181,36 +181,100 @@ Area_Algos.rand_walk_diag = function({area_arr, pseudorand, quad, tile_index, fi
   }
   return array
 }
-Area_Algos.perlin_tile = function({L1_gvec, L2tile}) { //returns a level 1 tile number
-  let set = TerrainSets.get(L2tile) //gets an array of tile numbers defined in t_type
-  if (Object.is(set, undefined)) {return base_tile1_from(L2tile)}
-
+Area_Algos.perlin_L1_value = function(L1_gvec, detail=`medium`) { //returns a number between 0, 1
   let {x, y} = L1_gvec
   let scale = 0.05
-  let large = noise.simplex2(x*scale, y*scale)
-  // large = (Math.min(large, 0)+1)
-  large = (large+1)/2
-  let small = noise.simplex2(x*0.5, y*0.5)
-  // small = (Math.min(small, 0)+1)
-  small = (small+1)/2
-  let value = large/2 + small/2// range is 0, 1
-  value = Math.floor(value*set.length)
-  if (set[value] == undefined) {console.log(value)}
-  return set[value]
+  switch(detail) {
+    case `large`: scale = 0.005
+      break
+    case `medium`: scale = 0.05
+      break
+    case `small`: scale = 0.5
+      break
+  }
+  let value = noise.simplex2(x*scale, y*scale)
+  value = (value+1) /2
+  return value
 }
-Area_Algos.perlin_fill = function({L2vec, L2tile}) {
+Area_Algos.draw_area = function(L2vec, op=undefined) {
   let arr = []
   let parent = new Vec2(L2vec)
   parent.scale(128)
-  for (let i = 0; i < AREA_SIZE; i++) {
-    let x = [];
-    for (let j = 0; j < AREA_SIZE; j++) {
-      let L1vec = new Vec2(i,j)
-      let L1_gvec = L1vec.add(parent)
-      let tile = this.perlin_tile({L1_gvec:L1_gvec, L2tile:L2tile})
-      x.push(tile);
+  for (let x = 0; x < AREA_SIZE; x++) {
+    let col = [];
+    for (let y = 0; y < AREA_SIZE; y++) {
+      let L1_vec = new Vec2(x,y)
+      let L1_gvec = new Vec2(L1_vec)
+      L1_gvec.add(parent)
+      let tile = op({L1_gvec:L1_gvec, L1_vec:L1_vec})
+      col.push(tile);
     }
-    arr.push(x);
+    arr.push(col);
   }
   return arr
+}
+Area_Algos.L2tile_to_terrain_set = function(L2tile) {
+  let set = TerrainSets.get(L2tile) //gets an array of tile numbers defined in t_type
+  if (Object.is(set, undefined)) {set = [base_tile1_from(L2tile)]}
+  return set
+}
+
+Area_Algos.perlin_fill = function({L2vec, L2tile}) {
+  let pv = this.perlin_L1_value
+  let set = this.L2tile_to_terrain_set(L2tile) //gets an array of tile numbers defined in t_type
+  let op = function({L1_gvec}) {
+    let value = (pv(L1_gvec, `medium`) + pv(L1_gvec, `small`))/2
+    value = Math.floor(value*set.length)
+    return set[value]
+  }
+  return this.draw_area(L2vec, op)
+}
+Area_Algos.perlin_half = function({L2vec, L2tile_quad2, L2tile_quad4, horizontal=true}) {
+  let pv = this.perlin_L1_value
+  let set1 = this.L2tile_to_terrain_set(L2tile_quad2)
+  let set2 = this.L2tile_to_terrain_set(L2tile_quad4)
+  let op = function({L1_gvec, L1_vec}) {
+    let terrain_value = (pv(L1_gvec, `large`)*4 + pv(L1_gvec, `medium`) + pv(L1_gvec, `small`)*0.15 )/5.15
+    let tilt = 0
+    if (horizontal) {
+      tilt += (L1_vec.y)/AREA_SIZE
+    } else {
+      tilt += (L1_vec.x)/AREA_SIZE
+    }
+    terrain_value = (terrain_value + 2*tilt) /3
+    terrain_value = tilt
+    let set = set1
+    if (terrain_value > 0.5) { set = set2 }
+    let detail_value = (pv(L1_gvec, `medium`) + pv(L1_gvec, `small`))/2
+    detail_value = Math.floor(detail_value*set.length)
+    return set[detail_value]
+  }
+  return this.draw_area(L2vec, op)
+}
+Area_Algos.perlin_1_corner = function({L2vec, L2tile_quad4, L2tile_common, L2tile_corner, quad=1}) {
+  let pv = this.perlin_L1_value
+  let set1 = this.L2tile_to_terrain_set(L2tile_common)
+  let set2 = this.L2tile_to_terrain_set(L2tile_corner)
+  let op = function({L1_gvec, L1_vec}) {
+    let terrain_value = (pv(L1_gvec, `large`)*4 + pv(L1_gvec, `medium`) + pv(L1_gvec, `small`)*0.15 )/5.15
+    let tilt = 0
+    switch(quad) {
+      case 1: tilt += (AREA_SIZE + L1_vec.x - L1_vec.y) / (3*AREA_SIZE)
+        break
+      case 2: tilt += (2*AREA_SIZE - L1_vec.x - L1_vec.y) / (3*AREA_SIZE)
+        break
+      case 3: tilt += (AREA_SIZE - L1_vec.x + L1_vec.y) / (3*AREA_SIZE)
+        break
+      case 4: tilt += (L1_vec.x + L1_vec.y) / (3*AREA_SIZE)
+        break
+    }
+    terrain_value = (-terrain_value + 3*tilt) /3
+
+    let set = set2
+    if (terrain_value < 0.50) { set = set1 }
+    let detail_value = (pv(L1_gvec, `medium`) + pv(L1_gvec, `small`))/2
+    detail_value = Math.floor(detail_value*set.length)
+    return set[detail_value]
+  }
+  return this.draw_area(L2vec, op)
 }

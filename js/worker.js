@@ -208,14 +208,15 @@ class Area extends Map
 
     switch (trans.trans) {
       case `none`: {
-        let type = quadrant_ind.get(4)
+        let type = base_from_composite(quadrant_ind.get(4))
         arr = Area_Algos.perlin_fill({L2vec:this.get(`g_vec`), L2tile:type})
       } break
       case `4 corners`: {
         arr = fill_all(unfinished)
       } break
       case `1 corner`: {
-        arr = fill_all(base_tile1_from(trans.common_type))
+        let type = base_from_composite(trans.common_type)
+        arr = Area_Algos.perlin_fill({L2vec:this.get(`g_vec`), L2tile:type})
         let corner_tile = quadrant_ind.get(trans.unique_quadrant)
         arr = Area_Algos.rand_walk_diag({
           area_arr: arr,
@@ -224,19 +225,15 @@ class Area extends Map
           tile_index: Tile1.PATH,
           fill: base_tile1_from(corner_tile)
         })
+        arr = Area_Algos.perlin_1_corner({L2vec:this.get(`g_vec`), L2tile_quad4: base_from_composite(quadrant_ind.get(4)), L2tile_common:type, L2tile_corner:base_from_composite(corner_tile), quad:trans.unique_quadrant})
       } break
       case `2 and 2 corners`: {
         arr = fill_all(unfinished)
       } break
       case `half and half`: {
-        arr = fill_all(base_tile1_from(quadrant_ind.get(4)))
-        let type = quadrant_ind.get(2)
-        arr = Area_Algos.rand_walk_ortho({
-          area_arr: arr,
-          pseudorand: ps,
-          horizontal: trans.is_horizontal,
-          tile_index: Tile1.PATH,
-          fill: base_tile1_from(type) })
+        let type1 = base_from_composite(quadrant_ind.get(2))
+        let type2 = base_from_composite(quadrant_ind.get(4))
+        arr = Area_Algos.perlin_half({L2vec:this.get(`g_vec`), L2tile_quad2:type1, L2tile_quad4:type2, horizontal:false})
       } break
       case `3 types no adj`: {
         arr = fill_all(unfinished)
@@ -246,6 +243,7 @@ class Area extends Map
       }
     }
     //end switch
+    arr = transpose(arr) //phaser uses transposed arrays for tilemap, in the form of [y][x]
     this.set("arr", arr)
   }
 }
