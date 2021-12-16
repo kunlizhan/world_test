@@ -193,7 +193,7 @@ Area_Algos.perlin_L1_value = function(L1_gvec, detail=`medium`) { //returns a nu
       break
   }
   let value = noise.simplex2(x*scale, y*scale)
-  value = (value+1) /2
+  //value = (value+1) /2
   return value
 }
 Area_Algos.draw_area = function(L2vec, op=undefined) {
@@ -220,61 +220,94 @@ Area_Algos.L2tile_to_terrain_set = function(L2tile) {
 }
 
 Area_Algos.perlin_fill = function({L2vec, L2tile}) {
-  let pv = this.perlin_L1_value
+  let area_algos = this
   let set = this.L2tile_to_terrain_set(L2tile) //gets an array of tile numbers defined in t_type
   let op = function({L1_gvec}) {
-    let value = (pv(L1_gvec, `medium`) + pv(L1_gvec, `small`))/2
+    let value = area_algos.perlin_content(L1_gvec)
     value = Math.floor(value*set.length)
     return set[value]
   }
   return this.draw_area(L2vec, op)
 }
-Area_Algos.perlin_half = function({L2vec, L2tile_quad2, L2tile_quad4, horizontal=true}) {
+Area_Algos.perlin_border = function(L1_gvec) {
   let pv = this.perlin_L1_value
-  let set1 = this.L2tile_to_terrain_set(L2tile_quad2)
-  let set2 = this.L2tile_to_terrain_set(L2tile_quad4)
+  let large = pv(L1_gvec, `large`)
+  let medium = pv(L1_gvec, `medium`)
+  let small = pv(L1_gvec, `small`)
+  let value = ( (large*22)+medium*2+(small*0.1) )/24.1
+  value = (value+1) /2 //range is 0, 1
+  return value * 0.8
+}
+Area_Algos.perlin_content = function(L1_gvec) {
+  let pv = this.perlin_L1_value
+  let value = (pv(L1_gvec, `medium`) + pv(L1_gvec, `small`))/2
+  value = (value+1) /2
+  return value
+}
+Area_Algos.perlin_half = function({L2vec, quadrant_ind, trans}) {
+  let area_algos = this
+  let q2 = base_from_composite(quadrant_ind.get(2))
+  let q4 = base_from_composite(quadrant_ind.get(4))
+  let compare = new Area_Algos.Tile_Compare(q2, q4)
+  let set1 = this.L2tile_to_terrain_set(compare.smaller)
+  let set2 = this.L2tile_to_terrain_set(compare.larger)
+
   let op = function({L1_gvec, L1_vec}) {
-    let terrain_value = (pv(L1_gvec, `large`)*4 + pv(L1_gvec, `medium`) + pv(L1_gvec, `small`)*0.15 )/5.15
     let tilt = 0
-    if (horizontal) {
-      tilt += (L1_vec.y)/AREA_SIZE
+    if (trans.is_horizontal) {
+      tilt = (L1_vec.y)/AREA_SIZE
     } else {
-      tilt += (L1_vec.x)/AREA_SIZE
+      tilt = (L1_vec.x)/AREA_SIZE
     }
-    terrain_value = (terrain_value + 2*tilt) /3
-    terrain_value = tilt
+
+    terrain_total = (q2 <= q4)? (tilt) : 1-(tilt)
+    terrain_total += area_algos.perlin_border(L1_gvec) - 0.4
+
     let set = set1
-    if (terrain_value > 0.5) { set = set2 }
-    let detail_value = (pv(L1_gvec, `medium`) + pv(L1_gvec, `small`))/2
+    if (terrain_total > 0.5) { set = set2 }
+    let detail_value = area_algos.perlin_content(L1_gvec)
     detail_value = Math.floor(detail_value*set.length)
     return set[detail_value]
   }
   return this.draw_area(L2vec, op)
 }
-Area_Algos.perlin_1_corner = function({L2vec, L2tile_quad4, L2tile_common, L2tile_corner, quad=1}) {
-  let pv = this.perlin_L1_value
-  let set1 = this.L2tile_to_terrain_set(L2tile_common)
-  let set2 = this.L2tile_to_terrain_set(L2tile_corner)
+Area_Algos.perlin_1_corner = function({L2vec, quadrant_ind, trans}) {
+  let area_algos = this
+  let tile_common = base_from_composite(trans.common_type)
+  let tile_corner = base_from_composite(quadrant_ind.get(trans.unique_quadrant))
+  let compare = new Area_Algos.Tile_Compare(tile_common, tile_corner)
+  let set1 = this.L2tile_to_terrain_set(compare.smaller)
+  let set2 = this.L2tile_to_terrain_set(compare.larger)
+
   let op = function({L1_gvec, L1_vec}) {
-    let terrain_value = (pv(L1_gvec, `large`)*4 + pv(L1_gvec, `medium`) + pv(L1_gvec, `small`)*0.15 )/5.15
     let tilt = 0
-    switch(quad) {
-      case 1: tilt += (AREA_SIZE + L1_vec.x - L1_vec.y) / (3*AREA_SIZE)
+    switch(trans.unique_quadrant) {
+      case 1: tilt = (AREA_SIZE + L1_vec.x - L1_vec.y) / (2*AREA_SIZE)
         break
-      case 2: tilt += (2*AREA_SIZE - L1_vec.x - L1_vec.y) / (3*AREA_SIZE)
+      case 2: tilt = (2*AREA_SIZE - L1_vec.x - L1_vec.y) / (2*AREA_SIZE)
         break
-      case 3: tilt += (AREA_SIZE - L1_vec.x + L1_vec.y) / (3*AREA_SIZE)
+      case 3: tilt = (AREA_SIZE - L1_vec.x + L1_vec.y) / (2*AREA_SIZE)
         break
-      case 4: tilt += (L1_vec.x + L1_vec.y) / (3*AREA_SIZE)
+      case 4: tilt = (L1_vec.x + L1_vec.y) / (2*AREA_SIZE)
         break
     }
-    terrain_value = (-terrain_value + 3*tilt) /3
+    tilt = tilt*(2/3)
 
-    let set = set2
-    if (terrain_value < 0.50) { set = set1 }
-    let detail_value = (pv(L1_gvec, `medium`) + pv(L1_gvec, `small`))/2
+    terrain_total = (tile_common <= tile_corner)? (tilt) : 1-(tilt)
+    terrain_total += ( area_algos.perlin_border(L1_gvec) -0.4 )/3
+
+    let set = set1
+    if (terrain_total > 0.5) { set = set2 }
+    let detail_value = area_algos.perlin_content(L1_gvec)
     detail_value = Math.floor(detail_value*set.length)
     return set[detail_value]
   }
   return this.draw_area(L2vec, op)
+}
+Area_Algos.Tile_Compare = class Tile_Compare extends Object {
+  constructor(int1, int2) {
+    super()
+    if (int1 <= int2) { this.smaller = int1; this.larger = int2 }
+    else { this.smaller = int2; this.larger = int1 }
+  }
 }

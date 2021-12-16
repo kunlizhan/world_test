@@ -215,25 +215,13 @@ class Area extends Map
         arr = fill_all(unfinished)
       } break
       case `1 corner`: {
-        let type = base_from_composite(trans.common_type)
-        arr = Area_Algos.perlin_fill({L2vec:this.get(`g_vec`), L2tile:type})
-        let corner_tile = quadrant_ind.get(trans.unique_quadrant)
-        arr = Area_Algos.rand_walk_diag({
-          area_arr: arr,
-          pseudorand: ps,
-          quad: trans.unique_quadrant,
-          tile_index: Tile1.PATH,
-          fill: base_tile1_from(corner_tile)
-        })
-        arr = Area_Algos.perlin_1_corner({L2vec:this.get(`g_vec`), L2tile_quad4: base_from_composite(quadrant_ind.get(4)), L2tile_common:type, L2tile_corner:base_from_composite(corner_tile), quad:trans.unique_quadrant})
+        arr = Area_Algos.perlin_1_corner({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans})
       } break
       case `2 and 2 corners`: {
         arr = fill_all(unfinished)
       } break
       case `half and half`: {
-        let type1 = base_from_composite(quadrant_ind.get(2))
-        let type2 = base_from_composite(quadrant_ind.get(4))
-        arr = Area_Algos.perlin_half({L2vec:this.get(`g_vec`), L2tile_quad2:type1, L2tile_quad4:type2, horizontal:false})
+        arr = Area_Algos.perlin_half({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans})
       } break
       case `3 types no adj`: {
         arr = fill_all(unfinished)
@@ -243,6 +231,11 @@ class Area extends Map
       }
     }
     //end switch
+    // debug markers
+    arr[0].forEach( (e, i, a) => { if (i % 7 == 0) {a[i] = 1} })
+    arr.forEach( (e, i) => { if (i%7 == 0) {e[0] = 1} })
+    arr[0][0] = 12
+
     arr = transpose(arr) //phaser uses transposed arrays for tilemap, in the form of [y][x]
     this.set("arr", arr)
   }
