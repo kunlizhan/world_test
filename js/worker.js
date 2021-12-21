@@ -180,7 +180,7 @@ class Area extends Map
             if (common_quads.includes(4)) { orientation="bottom" }
             else { orientation="left" }
           }
-          return {trans: "3 types with adj", half: orientation}
+          return {trans: "3 types with adj", half: orientation, common_type: most_common_type }
         }
     }
   }
@@ -213,21 +213,28 @@ class Area extends Map
       } break
       case `4 corners`: {
         arr = fill_all(unfinished)
+        console.log(`4 corners unfinished at ${this.get(`id`)}`)
       } break
       case `1 corner`: {
-        arr = Area_Algos.perlin_1_corner({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans})
+        arr = Area_Algos.border_1_corner({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans, arr:this.get(`arr`)})
+        //arr = Area_Algos.perlin_1_corner({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans})
       } break
       case `2 and 2 corners`: {
         arr = fill_all(unfinished)
+        console.log(`2 and 2 corners unfinished at ${this.get(`id`)}`)
       } break
       case `half and half`: {
-        arr = Area_Algos.perlin_half({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans})
+        //arr = Area_Algos.perlin_half({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans})
+        arr = Area_Algos.border_half({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans, arr:this.get(`arr`)})
       } break
       case `3 types no adj`: {
         arr = fill_all(unfinished)
+        console.log(`3 types no adj unfinished at ${this.get(`id`)}`)
       } break
       case `3 types with adj`: {
-        arr = fill_all(unfinished)
+        //arr = Area_Algos.comp_3_adj({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans})
+        arr = fill_all(of_interest)
+        console.log(`3 types with adj unfinished at ${this.get(`id`)}`)
       }
     }
     //end switch

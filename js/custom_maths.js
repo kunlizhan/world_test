@@ -46,3 +46,27 @@ function str_to_vec(str) {
   let vec = new Phaser.Math.Vector2(parseInt(arr[0]), parseInt(arr[1]))
   return vec
 }
+function point_mirror_xy(vec) {
+  let {x, y} = vec
+  return new Vec2(y,x)
+}
+function point_mirror_x(vec, size=AREA_SIZE) {
+  let {x, y} = vec
+  y = size -1 -y
+  return new Vec2(x,y)
+}
+function point_mirror_y(vec, size=AREA_SIZE) {
+  let {x, y} = vec
+  x = size -1 -x
+  return new Phaser.Math.Vector2(x,y)
+}
+function point_rot_R(vec, size=AREA_SIZE) {
+  let result = point_mirror_x(vec, size)
+  result = point_mirror_xy(result)
+  return result
+}
+function point_rot_L(vec, size=AREA_SIZE) {
+  let result = point_mirror_y(vec, size)
+  result = point_mirror_xy(result)
+  return result
+}
