@@ -374,24 +374,56 @@ Area_Algos.border_half = function({L2vec, quadrant_ind, trans, arr}) {
 Area_Algos.border_1_corner = function({L2vec, quadrant_ind, trans, arr}) {
   // Draw two paths on L1, transformed by perlin. The paths (pre-transformation) starts at their respective edge-middles
   // each path moves towards the other. When the paths cross we stop and smooth the corner.
-  let path_cw = new Area_Algos.Path_Perlin_Diag(`up`, `cw`)
-  let path_ccw = new Area_Algos.Path_Perlin_Diag(`right`, `ccw`)
-  let point_cw = path_cw.next_transformed(L2vec)
-  //let point_cw = path_cw.next()
-  let point_ccw = path_ccw.next_transformed(L2vec)
-  //console.log(point_ccw)
-  while (point_cw.x<point_ccw.x+2 || point_cw.y<point_ccw.y+2) {
-    let {x,y} = point_cw
-    arr[x][y] = 1
-      arr[x][y+1] = 1 //smoothing
-      arr[x-1][y] = 3
-    point_cw = path_cw.next_transformed(L2vec)
-    x = point_ccw.x
-    y = point_ccw.y
-    arr[x][y] = 12
-      arr[x-1][y] = 12 //smoothing
-      arr[x-1][y+1] = 1
-    point_ccw = path_ccw.next_transformed(L2vec)
+  let path_origins = []
+  let not_crossed = undefined
+  let overshoot = 6
+  switch (trans.unique_quadrant) {
+    case 1: path_origins = [`up`,`right`]
+      not_crossed = function(point_cw, point_ccw) {
+        return (point_cw.x<point_ccw.x+overshoot || point_cw.y<point_ccw.y+overshoot)
+      }
+    break
+    case 2: path_origins = [`left`,`up`]
+      not_crossed = function(point_cw, point_ccw) {
+        return (point_cw.x<point_ccw.x+overshoot || point_cw.y>point_ccw.y-overshoot)
+      }
+    break
+    case 3: path_origins = [`down`,`left`]
+      not_crossed = function(point_cw, point_ccw) {
+        return (point_cw.x>point_ccw.x-overshoot || point_cw.y>point_ccw.y-overshoot)
+      }
+    break
+    case 4: path_origins = [`right`,`down`]
+      not_crossed = function(point_cw, point_ccw) {
+        return (point_cw.x>point_ccw.x-overshoot || point_cw.y<point_ccw.y+overshoot)
+      }
+    break
+  }
+  let path_cw = new Area_Algos.Path_Perlin_Diag(path_origins[0], `cw`)
+  let path_ccw = new Area_Algos.Path_Perlin_Diag(path_origins[1], `ccw`)
+  function draw_to_next(path, L2vec, arr, tile) {
+    if (Object.is(tile, undefined)) { tile = -1 }
+    /*
+    let {x,y} = point = path.next()
+    arr[x][y] = tile
+    return point
+    */
+
+    let vec_list = path.next_transformed(L2vec)
+    vec_list.forEach(
+      point => {
+        let {x,y} = point
+        arr[x][y] = tile
+      }
+    )
+    return vec_list.pop()
+  }
+  let point_cw = draw_to_next(path_cw, L2vec, arr)
+  let point_ccw = draw_to_next(path_ccw, L2vec, arr, 12)
+  // draws the paths closer to each other until they cross
+  while (not_crossed(point_cw, point_ccw)) {
+    point_cw = draw_to_next(path_cw, L2vec, arr)
+    point_ccw = draw_to_next(path_ccw, L2vec, arr, 12)
   }
   return arr
 }
@@ -412,6 +444,7 @@ Area_Algos.Path_Perlin_Diag = class Path_Perlin_Diag extends Array {
       case `right`: transform = (vec) => point_rot_R(vec)
         break
     }
+    this.transform = transform
     let L1 = new Vec2(AREA_SIZE/2, 0)
     this.push(L1)
     // draw diagonal straight line
@@ -420,19 +453,24 @@ Area_Algos.Path_Perlin_Diag = class Path_Perlin_Diag extends Array {
       diag_cursor = this.gen_diag()
     }
     this.pop()
+    let half = []
     this.forEach(
       (vec, ind, arr) => {
+        if ((ind+1)%2===0) {return}
         if (!this.clockwise) { vec = point_mirror_y(vec) }
-        arr[ind] = transform(vec)
+        half.push(transform(vec))
       }
     )
-
+    while (this.length) {this.pop()}
+    half.forEach(e=>{this.push(e)})
   }
   gen_diag = function() {
     let {x,y} = this[this.length-1]
     y++
-    this.push(new Vec2(x,y))
-    y++
+    if (this.length < AREA_SIZE/4) {
+      this.push(new Vec2(x,y))
+      y++
+    }
     x++
     this.push(new Vec2(x,y))
     return new Vec2(x,y)
@@ -453,8 +491,9 @@ Area_Algos.Path_Perlin_Diag = class Path_Perlin_Diag extends Array {
     parent.scale(AREA_SIZE)
     let L1_gvec = this.next()
     L1_gvec.add(parent)
+
     let perlin = Area_Algos.get_perlin_border_value(L1_gvec) * (AREA_SIZE*(3/8))
-    perlin = perlin * Math.max((AREA_SIZE-(this.current_index**1.3)/1), 0) / AREA_SIZE
+    perlin = perlin * Math.max((AREA_SIZE-((this.current_index*2)**1.3)/1), 0) / AREA_SIZE
     perlin = Math.floor(perlin)
 
     let target_L1 = this.current()
@@ -463,6 +502,31 @@ Area_Algos.Path_Perlin_Diag = class Path_Perlin_Diag extends Array {
     else  { move_target.set(0, perlin) }
     target_L1.add(move_target)
 
-    return target_L1
+    let result = [target_L1]
+    if (this.last_transformed) {
+      let last = this.last_transformed
+      let d = last.distance(target_L1)
+      let root2 = 1.42
+      let join_tiles = []
+      if (d>root2) {
+        for (let i=1; i<=d-1; i++) {
+          let interpolation = new Vec2(last)
+          interpolation.lerp(target_L1, i/d)
+          interpolation.x = Math.round(interpolation.x)
+          interpolation.y = Math.round(interpolation.y)
+          join_tiles.push(interpolation)
+        }
+        result = join_tiles.concat(result)
+        /*
+        let log = `//test log from ${vec_to_str(last)} to ${vec_to_str(target_L1)}, d= ${d} \n`
+        join_tiles.forEach(
+          vec => {log = log+`, `+vec_to_str(vec)}
+        )
+        console.log(log)
+        */
+      }
+    }
+    this.last_transformed = target_L1
+    return result
   }
 }
