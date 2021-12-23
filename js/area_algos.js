@@ -371,7 +371,7 @@ Area_Algos.border_half = function({L2vec, quadrant_ind, trans, arr}) {
   }
   return arr
 }
-Area_Algos.border_1_corner = function({L2vec, quadrant_ind, trans, arr}) {
+Area_Algos.border_1_corner_old = function({L2vec, quadrant_ind, trans, arr}) {
   // Draw two paths on L1, transformed by perlin. The paths (pre-transformation) starts at their respective edge-middles
   // each path moves towards the other. When the paths cross we stop and smooth the corner.
   let path_origins = []
@@ -528,5 +528,38 @@ Area_Algos.Path_Perlin_Diag = class Path_Perlin_Diag extends Array {
     }
     this.last_transformed = target_L1
     return result
+  }
+}
+Area_Algos.border_1_corner = function({L2vec, quadrant_ind, trans, arr}) {
+  let circle = new Area_Algos.Corner_Circle(trans.unique_quadrant)
+  circle.points.forEach(point => {
+    let {x,y} = point
+    arr[x][y] = -1
+  })
+  circle.p2.forEach(point => {
+    let {x,y} = point
+    arr[x][y] = 12
+  })
+  return arr
+}
+Area_Algos.Corner_Circle = class Corner_Circle extends Object {
+  constructor(quad) {
+    super()
+    this.points = []
+    this.p2 = []
+    let r = AREA_SIZE/2
+    let middle = Math.floor(((r**2)/2)**0.5)
+    //draw circle in quadrant 2
+    for (let x = 0; x <= middle; x++) {
+      let y = Math.round(get_orth_from_hypotenuse(x,r))
+      let vec = new Vec2(x,y)
+      this.points.push(vec)
+    }
+    for (let y = middle; y >= 0; y--) {
+      let x = Math.round(get_orth_from_hypotenuse(y,r))
+      let vec = new Vec2(x,y)
+      this.p2.push(vec)
+    }
+    // this.points = [...new Set(this.points)]
   }
 }

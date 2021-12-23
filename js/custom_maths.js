@@ -70,3 +70,7 @@ function point_rot_L(vec, size=AREA_SIZE) {
   result = point_mirror_xy(result)
   return result
 }
+
+function get_orth_from_hypotenuse(x=0, r=0) {
+  return (r**2 - x**2)**(0.5)
+}
