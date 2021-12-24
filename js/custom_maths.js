@@ -58,7 +58,7 @@ function point_mirror_x(vec, size=AREA_SIZE) {
 function point_mirror_y(vec, size=AREA_SIZE) {
   let {x, y} = vec
   x = size -1 -x
-  return new Phaser.Math.Vector2(x,y)
+  return new Vec2(x,y)
 }
 function point_rot_R(vec, size=AREA_SIZE) {
   let result = point_mirror_x(vec, size)
@@ -73,4 +73,23 @@ function point_rot_L(vec, size=AREA_SIZE) {
 
 function get_orth_from_hypotenuse(x=0, r=0) {
   return (r**2 - x**2)**(0.5)
+}
+function clamp(n, min=0, max=AREA_SIZE-1) {
+  return Math.min(Math.max(n, min), max)
+}
+function line_points_btwn(vec1, vec2) {
+  let d = vec1.distance(vec2)
+  let ROOT2 = 1.42
+  let return_points = []
+  if (d>ROOT2) {
+    for (let i=1; i<=d-1; i++) {
+      let interpolation = new Vec2(vec1)
+      interpolation.lerp(vec2, i/d)
+      interpolation.x = Math.round(interpolation.x)
+      interpolation.y = Math.round(interpolation.y)
+      return_points.push(interpolation)
+    }
+  }
+  return_points.push(new Vec2(vec2))
+  return return_points
 }

@@ -121,7 +121,7 @@ class Area extends Map
     g_vec.add(id)
     this.set("g_vec", g_vec)
     //console.log(this.get("g_vec"))
-    this.set("arr", fill_all(0))
+    this.set("arr", Area_Algos.blank(0))
 	}
   path_from_index(ind) {
     return (ind%2===0)? true : false
@@ -156,8 +156,9 @@ class Area extends Map
       case 2:
         if (common_quads.length == 3) {
           let corner = null
-          types_ind.forEach( (value)=> {if (value.length===1) {corner = value[0]} } )
-          return {trans: "1 corner", unique_quadrant: corner, common_type: most_common_type }
+          let non_corner = null
+          types_ind.forEach( (value)=> {if (value.length===1) {corner = value[0]} else {non_corner = value[0]} } )
+          return {trans: "1 corner", unique_quadrant: corner, non_unique_quadrant: non_corner, common_type: most_common_type }
         }
         else {
           let diff = Math.abs(common_quads[0]-common_quads[1]) //only diagonal corners, quadrants (1,3) or (2,4) will have difference of exactly 2
@@ -212,7 +213,7 @@ class Area extends Map
         arr = Area_Algos.perlin_fill({L2vec:this.get(`g_vec`), L2tile:type})
       } break
       case `4 corners`: {
-        arr = fill_all(unfinished)
+        arr = Area_Algos.blank(unfinished)
         console.log(`4 corners unfinished at ${this.get(`id`)}`)
       } break
       case `1 corner`: {
@@ -220,7 +221,7 @@ class Area extends Map
         //arr = Area_Algos.perlin_1_corner({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans})
       } break
       case `2 and 2 corners`: {
-        arr = fill_all(unfinished)
+        arr = Area_Algos.blank(unfinished)
         console.log(`2 and 2 corners unfinished at ${this.get(`id`)}`)
       } break
       case `half and half`: {
@@ -228,12 +229,12 @@ class Area extends Map
         arr = Area_Algos.border_half({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans, arr:this.get(`arr`)})
       } break
       case `3 types no adj`: {
-        arr = fill_all(unfinished)
+        arr = Area_Algos.blank(unfinished)
         console.log(`3 types no adj unfinished at ${this.get(`id`)}`)
       } break
       case `3 types with adj`: {
         //arr = Area_Algos.comp_3_adj({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans})
-        arr = fill_all(of_interest)
+        arr = Area_Algos.blank(of_interest)
         console.log(`3 types with adj unfinished at ${this.get(`id`)}`)
       }
     }
@@ -246,17 +247,6 @@ class Area extends Map
     arr = transpose(arr) //phaser uses transposed arrays for tilemap, in the form of [y][x]
     this.set("arr", arr)
   }
-}
-function fill_all(tile) {
-  let arr = []
-  for (var i = 0; i < AREA_SIZE; i++) {
-    let x = [];
-    for (var j = 0; j < AREA_SIZE; j++) {
-      x.push(tile);
-    }
-    arr.push(x);
-  }
-  return arr
 }
 function make_path(area_arr, ps) {
   ps.set_bit_len(1)

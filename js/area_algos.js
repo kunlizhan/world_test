@@ -2,6 +2,18 @@
 
 const Area_Algos = {}
 
+Area_Algos.blank = function(tile) {
+  let arr = []
+  for (var i = 0; i < AREA_SIZE; i++) {
+    let x = [];
+    for (var j = 0; j < AREA_SIZE; j++) {
+      x.push(tile);
+    }
+    arr.push(x);
+  }
+  return arr
+}
+
 Area_Algos.paint = function({array, c_y, c_x, use_tile, fill}) {
   array[c_y][c_x] = use_tile
   if (!Object.is(fill, undefined)) {
@@ -371,195 +383,131 @@ Area_Algos.border_half = function({L2vec, quadrant_ind, trans, arr}) {
   }
   return arr
 }
-Area_Algos.border_1_corner_old = function({L2vec, quadrant_ind, trans, arr}) {
-  // Draw two paths on L1, transformed by perlin. The paths (pre-transformation) starts at their respective edge-middles
-  // each path moves towards the other. When the paths cross we stop and smooth the corner.
-  let path_origins = []
-  let not_crossed = undefined
-  let overshoot = 6
-  switch (trans.unique_quadrant) {
-    case 1: path_origins = [`up`,`right`]
-      not_crossed = function(point_cw, point_ccw) {
-        return (point_cw.x<point_ccw.x+overshoot || point_cw.y<point_ccw.y+overshoot)
-      }
-    break
-    case 2: path_origins = [`left`,`up`]
-      not_crossed = function(point_cw, point_ccw) {
-        return (point_cw.x<point_ccw.x+overshoot || point_cw.y>point_ccw.y-overshoot)
-      }
-    break
-    case 3: path_origins = [`down`,`left`]
-      not_crossed = function(point_cw, point_ccw) {
-        return (point_cw.x>point_ccw.x-overshoot || point_cw.y>point_ccw.y-overshoot)
-      }
-    break
-    case 4: path_origins = [`right`,`down`]
-      not_crossed = function(point_cw, point_ccw) {
-        return (point_cw.x>point_ccw.x-overshoot || point_cw.y<point_ccw.y+overshoot)
-      }
-    break
-  }
-  let path_cw = new Area_Algos.Path_Perlin_Diag(path_origins[0], `cw`)
-  let path_ccw = new Area_Algos.Path_Perlin_Diag(path_origins[1], `ccw`)
-  function draw_to_next(path, L2vec, arr, tile) {
-    if (Object.is(tile, undefined)) { tile = -1 }
-    /*
-    let {x,y} = point = path.next()
-    arr[x][y] = tile
-    return point
-    */
 
-    let vec_list = path.next_transformed(L2vec)
-    vec_list.forEach(
-      point => {
-        let {x,y} = point
-        arr[x][y] = tile
-      }
-    )
-    return vec_list.pop()
-  }
-  let point_cw = draw_to_next(path_cw, L2vec, arr)
-  let point_ccw = draw_to_next(path_ccw, L2vec, arr, 12)
-  // draws the paths closer to each other until they cross
-  while (not_crossed(point_cw, point_ccw)) {
-    point_cw = draw_to_next(path_cw, L2vec, arr)
-    point_ccw = draw_to_next(path_ccw, L2vec, arr, 12)
-  }
-  return arr
-}
-Area_Algos.Path_Perlin_Diag = class Path_Perlin_Diag extends Array {
-  constructor(start=`up`, dir=`cw`) {
-    super()
-    this.clockwise = true
-    this.start = start
-    if (dir===`ccw`) { this.clockwise = false }
-    let transform = undefined
-    switch (start) {
-      case `up`: transform = (vec) => vec
-        break
-      case `down`: transform = (vec) => point_mirror_x(point_mirror_y(vec))
-        break
-      case `left`: transform = (vec) => point_rot_L(vec)
-        break
-      case `right`: transform = (vec) => point_rot_R(vec)
-        break
-    }
-    this.transform = transform
-    let L1 = new Vec2(AREA_SIZE/2, 0)
-    this.push(L1)
-    // draw diagonal straight line
-    let diag_cursor = L1
-    while (diag_cursor.x<AREA_SIZE && diag_cursor.y<AREA_SIZE) {
-      diag_cursor = this.gen_diag()
-    }
-    this.pop()
-    let half = []
-    this.forEach(
-      (vec, ind, arr) => {
-        if ((ind+1)%2===0) {return}
-        if (!this.clockwise) { vec = point_mirror_y(vec) }
-        half.push(transform(vec))
-      }
-    )
-    while (this.length) {this.pop()}
-    half.forEach(e=>{this.push(e)})
-  }
-  gen_diag = function() {
-    let {x,y} = this[this.length-1]
-    y++
-    if (this.length < AREA_SIZE/4) {
-      this.push(new Vec2(x,y))
-      y++
-    }
-    x++
-    this.push(new Vec2(x,y))
-    return new Vec2(x,y)
-  }
-  current_index = -1
-  next = function() {
-    this.current_index++
-    if (this.current_index >= this.length) {
-      this.current_index--
-      return null
-    } else {
-      return this.current()
-    }
-  }
-  current = function() { return new Vec2(this[this.current_index]) }
-  next_transformed = function(L2vec) {
-    let parent = new Vec2(L2vec)
-    parent.scale(AREA_SIZE)
-    let L1_gvec = this.next()
-    L1_gvec.add(parent)
-
-    let perlin = Area_Algos.get_perlin_border_value(L1_gvec) * (AREA_SIZE*(3/8))
-    perlin = perlin * Math.max((AREA_SIZE-((this.current_index*2)**1.3)/1), 0) / AREA_SIZE
-    perlin = Math.floor(perlin)
-
-    let target_L1 = this.current()
-    let move_target = new Vec2()
-    if (this.start===`up` || this.start===`down`) { move_target.set(perlin, 0) }
-    else  { move_target.set(0, perlin) }
-    target_L1.add(move_target)
-
-    let result = [target_L1]
-    if (this.last_transformed) {
-      let last = this.last_transformed
-      let d = last.distance(target_L1)
-      let root2 = 1.42
-      let join_tiles = []
-      if (d>root2) {
-        for (let i=1; i<=d-1; i++) {
-          let interpolation = new Vec2(last)
-          interpolation.lerp(target_L1, i/d)
-          interpolation.x = Math.round(interpolation.x)
-          interpolation.y = Math.round(interpolation.y)
-          join_tiles.push(interpolation)
-        }
-        result = join_tiles.concat(result)
-        /*
-        let log = `//test log from ${vec_to_str(last)} to ${vec_to_str(target_L1)}, d= ${d} \n`
-        join_tiles.forEach(
-          vec => {log = log+`, `+vec_to_str(vec)}
-        )
-        console.log(log)
-        */
-      }
-    }
-    this.last_transformed = target_L1
-    return result
-  }
-}
 Area_Algos.border_1_corner = function({L2vec, quadrant_ind, trans, arr}) {
-  let circle = new Area_Algos.Corner_Circle(trans.unique_quadrant)
-  circle.points.forEach(point => {
-    let {x,y} = point
-    arr[x][y] = -1
-  })
-  circle.p2.forEach(point => {
-    let {x,y} = point
-    arr[x][y] = 12
-  })
+  // create new arr filled with a non-corner quadrant
+  let circle = new this.Corner_Circle(trans.unique_quadrant)
+  let transformed = new this.Perlin_from_Circle(circle, L2vec)
+  let points = transformed.points
+  let first = points[0]
+
+  // draw first point, then loop through remaining points, drawing lines from the last point each time.
+  arr[first.x][first.y] = trans.non_unique_quadrant
+  for (let i=1; i< points.length; i++) {
+    let p_to_next = line_points_btwn(points[i-1], points[i]) // array of vec to next point
+    p_to_next.forEach( point => {
+      let {x,y} = point
+      arr[x][y] = trans.non_unique_quadrant
+    })
+  }
+
+  // fill
+  let start_corner = undefined
+  switch (trans.unique_quadrant) {
+    case 1: start_corner = new Vec2(AREA_SIZE-1, 0)
+      break
+    case 2: start_corner = new Vec2(0, 0)
+      break
+    case 3: start_corner = new Vec2(0, AREA_SIZE-1)
+      break
+    case 4: start_corner = new Vec2(AREA_SIZE-1, AREA_SIZE-1)
+      break
+  }
+  let start_non_corner = point_mirror_x(point_mirror_y(start_corner))
+  this.boundary_fill(arr, start_corner, trans.unique_quadrant)
+  this.boundary_fill(arr, start_non_corner, trans.non_unique_quadrant)
+  //this.detail_quadrants(arr, quadrant_ind)
   return arr
 }
 Area_Algos.Corner_Circle = class Corner_Circle extends Object {
   constructor(quad) {
     super()
-    this.points = []
-    this.p2 = []
+    let points = []
     let r = AREA_SIZE/2
     let middle = Math.floor(((r**2)/2)**0.5)
     //draw circle in quadrant 2
     for (let x = 0; x <= middle; x++) {
       let y = Math.round(get_orth_from_hypotenuse(x,r))
       let vec = new Vec2(x,y)
-      this.points.push(vec)
+      points.push(vec)
     }
     for (let y = middle; y >= 0; y--) {
       let x = Math.round(get_orth_from_hypotenuse(y,r))
       let vec = new Vec2(x,y)
-      this.p2.push(vec)
+      points.push(vec)
     }
-    // this.points = [...new Set(this.points)]
+    // transform circle to correct quadrant. Mirrors so that first vec is always on horizontal
+    let transform = undefined
+    switch (quad) {
+      case 1: transform = (vec) => point_mirror_y(vec)
+        break
+      case 2: transform = (vec) => vec
+        break
+      case 3: transform = (vec) => point_mirror_x(vec)
+        break
+      case 4: transform = (vec) => point_mirror_x(point_mirror_y(vec))
+        break
+    }
+    this.points = []
+    for (let i=0; i<points.length; i++) {
+      if (i%3 === 2) {continue} // remove some points for smoothing
+      this.points.push(transform(points[i]))
+    }
+  }
+}
+Area_Algos.Perlin_from_Circle = class Perlin_from_Circle extends Object {
+  constructor(circle, L2gvec) {
+    super()
+    this.points = []
+    let parent = new Vec2(L2gvec)
+    parent.scale(AREA_SIZE)
+    let max_ind = circle.points.length-1
+
+    circle.points.forEach(
+      (vec, ind, arr) => {
+        let L1_gvec = new Vec2(vec)
+        L1_gvec.add(parent)
+
+        let perlin = Area_Algos.get_perlin_border_value(L1_gvec) * (AREA_SIZE*(3/8))
+        let influence_x = Math.floor( perlin * (ind) / max_ind )
+        let influence_y = Math.floor( perlin * (max_ind - ind) / max_ind )
+
+        let r_vec = new Vec2(influence_x, influence_y)
+        r_vec.add(vec)
+
+        let {x,y} = r_vec
+        x = clamp(x)
+        y = clamp(y)
+        r_vec.set(x,y)
+        this.points.push(r_vec)
+      }
+    )
+  }
+}
+Area_Algos.boundary_fill = function(arr, vec, tile) {
+  let queue = []
+  queue.push(vec)
+  let color = arr[vec.x][vec.y]
+  if (color === tile) {console.warn(`vec tile value is already equal`); return}
+  while (queue.length > 0) {
+    let current_vec = queue.pop()
+    let {x,y} = current_vec
+    try { current_color = arr[x][y] }
+    catch(e) {
+      if (e instanceof TypeError) { continue }
+      else { throw e }
+    }
+    if (current_color === color) {
+      arr[x][y] = tile
+      let q_add = []
+      q_add.push(new Vec2(Phaser.Math.Vector2.RIGHT))
+      q_add.push(new Vec2(Phaser.Math.Vector2.LEFT))
+      q_add.push(new Vec2(Phaser.Math.Vector2.UP))
+      q_add.push(new Vec2(Phaser.Math.Vector2.DOWN))
+      q_add.forEach(v => {
+        v.add(current_vec)
+        queue.push(v)
+      })
+    }
   }
 }
