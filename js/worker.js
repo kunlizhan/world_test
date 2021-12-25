@@ -217,7 +217,7 @@ class Area extends Map
         console.log(`4 corners unfinished at ${this.get(`id`)}`)
       } break
       case `1 corner`: {
-        arr = Area_Algos.border_1_corner({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans, arr:this.get(`arr`)})
+        arr = Area_Algos.border_1_corner({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans})
         //arr = Area_Algos.perlin_1_corner({L2vec:this.get(`g_vec`), quadrant_ind:quadrant_ind, trans:trans})
       } break
       case `2 and 2 corners`: {

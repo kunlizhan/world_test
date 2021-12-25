@@ -384,20 +384,21 @@ Area_Algos.border_half = function({L2vec, quadrant_ind, trans, arr}) {
   return arr
 }
 
-Area_Algos.border_1_corner = function({L2vec, quadrant_ind, trans, arr}) {
+Area_Algos.border_1_corner = function({L2vec, quadrant_ind, trans}) {
   // create new arr filled with a non-corner quadrant
+  let arr = this.blank(trans.non_unique_quadrant)
   let circle = new this.Corner_Circle(trans.unique_quadrant)
   let transformed = new this.Perlin_from_Circle(circle, L2vec)
   let points = transformed.points
   let first = points[0]
 
   // draw first point, then loop through remaining points, drawing lines from the last point each time.
-  arr[first.x][first.y] = trans.non_unique_quadrant
+  arr[first.x][first.y] = 0
   for (let i=1; i< points.length; i++) {
     let p_to_next = line_points_btwn(points[i-1], points[i]) // array of vec to next point
     p_to_next.forEach( point => {
       let {x,y} = point
-      arr[x][y] = trans.non_unique_quadrant
+      arr[x][y] = 0
     })
   }
 
@@ -415,8 +416,9 @@ Area_Algos.border_1_corner = function({L2vec, quadrant_ind, trans, arr}) {
   }
   let start_non_corner = point_mirror_x(point_mirror_y(start_corner))
   this.boundary_fill(arr, start_corner, trans.unique_quadrant)
-  this.boundary_fill(arr, start_non_corner, trans.non_unique_quadrant)
-  //this.detail_quadrants(arr, quadrant_ind)
+
+  // detail
+  this.detail_quadrants({arr: arr, L2vec: L2vec, quadrant_ind: quadrant_ind, trans: trans})
   return arr
 }
 Area_Algos.Corner_Circle = class Corner_Circle extends Object {
@@ -508,6 +510,33 @@ Area_Algos.boundary_fill = function(arr, vec, tile) {
         v.add(current_vec)
         queue.push(v)
       })
+    }
+  }
+}
+Area_Algos.detail_quadrants = function({arr, L2vec, quadrant_ind, trans}) {
+  let quadrant_sets = new Map()
+  quadrant_ind.forEach((value, key) => {
+    quadrant_sets.set(key, this.L2tile_to_terrain_set(value))
+  }) //gets an array of tile numbers defined in t_type
+  // special cases for borders
+  switch (trans.trans) {
+    case `1 corner`: {
+      let non_unique_set = quadrant_sets.get(trans.non_unique_quadrant)
+      quadrant_sets.set(0, non_unique_set)
+    } break
+  }
+  let parent = new Vec2(L2vec)
+  parent.scale(AREA_SIZE)
+
+  for (let x = 0; x < arr.length; x++) {
+    for (let y = 0; y < arr.length; y++) {
+      let L1_vec = new Vec2(x,y)
+      let L1_gvec = new Vec2(L1_vec)
+      L1_gvec.add(parent)
+      let value = this.perlin_content(L1_gvec)
+      let set = quadrant_sets.get(arr[x][y])
+      value = Math.floor(value*set.length)
+      arr[x][y] = set[value]
     }
   }
 }
